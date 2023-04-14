@@ -87,15 +87,6 @@ class CumulativeTime:
         print("Object ")
     
 
-class GS:
-    def __init__(self, array):
-        self.array = array
-        
-    def __hash__(self):
-        return hash(self.array.tobytes())
-
-
-
 class GeneratingSeries:
     """
     This is a data structure, used for storing relevant information about each
