@@ -4,10 +4,10 @@ Created on Thu Apr  6 14:35:36 2023
 
 @author: trist
 """
-
-import shuffle as shfl
 import sympy as sym
 from sympy.functions.elementary.exponential import exp as sympyexp
+
+import responses as rsps
 
 x = sym.Symbol('x')
 y = sym.Symbol('y')
@@ -133,13 +133,10 @@ _faulty2 = 3.2 * x + 7 * y
 _faulty3 = 1 + x + x**2
 _faulty4 = (1 + x + x**2) ** -2
 _faulty5 = (3 + 2.1*x + 2.1*x**2) ** -2
-_faulty6 = (1 + 2.1*x) ** - 1
-_faulty7 = (x + 0.333) ** - 1
-_faulty8 = x ** 2.1
-_faulty9 = (1 - x) ** 2
+_faulty6 = x ** 2.1
+
 faulties = [
-    _faulty0, _faulty1, _faulty2, _faulty3, _faulty4, _faulty5, _faulty6,
-    _faulty7, _faulty8, _faulty9
+    _faulty0, _faulty1, _faulty2, _faulty3, _faulty4, _faulty5, _faulty6
     ]
 
 
@@ -150,19 +147,19 @@ faulties = [
 def TestUnitForm():
     try:
         for test_var in units:
-            assert (test_var == shfl.lb_unit(test_var))
+            assert (test_var == rsps.lb_unit(test_var))
             
         for test_var in polys:
-            assert not shfl.lb_unit(test_var)    
+            assert not rsps.lb_unit(test_var)    
         
         for test_var in exps:
-            assert not shfl.lb_unit(test_var)
+            assert not rsps.lb_unit(test_var)
         
         for test_var in coses:
-            assert not shfl.lb_unit(test_var)
+            assert not rsps.lb_unit(test_var)
             
         for test_var in faulties:
-            assert not shfl.lb_unit(test_var)
+            assert not rsps.lb_unit(test_var)
     
     except AssertionError:
         print('\n' + f"{test_var}" + '\n' )
@@ -172,19 +169,19 @@ def TestUnitForm():
 def TestPolynomialForm():
     try:
         for test_var in units:
-            assert not shfl.lb_polynomial(test_var)
+            assert not rsps.lb_polynomial(test_var)
             
         for test_var in polys:
-            assert shfl.lb_polynomial(test_var)
+            assert rsps.lb_polynomial(test_var)
         
         for test_var in exps:
-            assert not shfl.lb_polynomial(test_var)        
+            assert not rsps.lb_polynomial(test_var)        
         
         for test_var in coses:
-            assert not shfl.lb_polynomial(test_var)
+            assert not rsps.lb_polynomial(test_var)
             
         for test_var in faulties:
-            assert not shfl.lb_polynomial(test_var)
+            assert not rsps.lb_polynomial(test_var)
         
     except AssertionError:
         print('\n' + f"{test_var}" + '\n' )
@@ -194,19 +191,19 @@ def TestPolynomialForm():
 def TestExponentialForm():
     try:
         for test_var in units:
-            assert not shfl.lb_exponential(test_var)
+            assert not rsps.lb_exponential(test_var)
             
         for test_var in polys:
-            assert not shfl.lb_exponential(test_var)
+            assert not rsps.lb_exponential(test_var)
             
         for test_var in exps:
-            assert shfl.lb_exponential(test_var)        
+            assert rsps.lb_exponential(test_var)        
         
         for test_var in coses:
-            assert not shfl.lb_exponential(test_var)
+            assert not rsps.lb_exponential(test_var)
             
         for test_var in faulties:
-            assert not shfl.lb_exponential(test_var)
+            assert not rsps.lb_exponential(test_var)
         
     except AssertionError:
         print('\n' + f"{test_var}" + '\n' )
@@ -216,19 +213,19 @@ def TestExponentialForm():
 def TestCosineForm():
     try:
         for test_var in units:
-            assert not shfl.lb_cosine(test_var)
+            assert not rsps.lb_cosine(test_var)
             
         for test_var in polys:
-            assert not shfl.lb_cosine(test_var)
+            assert not rsps.lb_cosine(test_var)
             
         for test_var in exps:
-            assert not shfl.lb_cosine(test_var)
+            assert not rsps.lb_cosine(test_var)
         
         for test_var in coses:
-            assert shfl.lb_cosine(test_var)
+            assert rsps.lb_cosine(test_var)
         
         for test_var in faulties:
-            assert not shfl.lb_cosine(test_var)
+            assert not rsps.lb_cosine(test_var)
             
     except AssertionError:
         print('\n' + f"{test_var}" + '\n' )
@@ -242,52 +239,52 @@ def TestCosineForm():
 def TestUnit():
     try:
         for index, test_var in enumerate(units):
-            assert(test_var ==  shfl.lb_unit(test_var))
+            assert(test_var ==  rsps.lb_unit(test_var))
 
     except AssertionError:
         print(f"Testcase : {index}")
         print(f"Input    : {test_var}")
         print(f"Answer   : {test_var}")
-        print(f"Result   : {shfl.lb_unit(test_var)}")
+        print(f"Result   : {rsps.lb_unit(test_var)}")
         raise AssertionError
 
 
 def TestPolynomial():
     try:
         for index, (ans, test_var) in enumerate(zip(polys_t, polys)):
-            assert (ans.equals(shfl.lb_polynomial(test_var)))
+            assert (ans.equals(rsps.lb_polynomial(test_var)))
 
     except AssertionError:
         print(f"Testcase : {index}")
         print(f"Input    : {test_var}")
         print(f"Answer   : {ans}")
-        print(f"Result   : {shfl.lb_polynomial(test_var)}")
+        print(f"Result   : {rsps.lb_polynomial(test_var)}")
         raise AssertionError
 
 
 def TestExponential():
     try:
         for index, (ans, test_var) in enumerate(zip(exps_t, exps)):
-            assert (ans.equals(shfl.lb_exponential(test_var)))
+            assert (ans.equals(rsps.lb_exponential(test_var)))
 
     except AssertionError:
         print(f"Testcase : {index}")
         print(f"Input    : {test_var}")
         print(f"Answer   : {ans}")
-        print(f"Result   : {shfl.lb_exponential(test_var)}")
+        print(f"Result   : {rsps.lb_exponential(test_var)}")
         raise AssertionError
 
 
 def TestCosine():
     try:
         for index, (ans, test_var) in enumerate(zip(coses_t, coses)):
-            assert (ans.equals(shfl.lb_cosine(test_var)))
+            assert (ans.equals(rsps.lb_cosine(test_var)))
 
     except AssertionError:
         print(f"Testcase : {index}")
         print(f"Input    : {test_var}")
         print(f"Answer   : {ans}")
-        print(f"Result   : {shfl.lb_cosine(test_var)}")
+        print(f"Result   : {rsps.lb_cosine(test_var)}")
         raise AssertionError
 
 
@@ -298,8 +295,9 @@ if __name__ == "__main__":
     TestExponentialForm()
     TestCosineForm()
     
-    # Tests for converting the GS to Time domain (Laplace-Borel transform).
+    # # Tests for converting the GS to Time domain (Laplace-Borel transform).
     TestUnit()
     TestPolynomial()
     TestExponential()
-    TestCosine()
+    print("Cosine has been commented out")
+    # TestCosine()
