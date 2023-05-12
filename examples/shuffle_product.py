@@ -20,15 +20,15 @@ import sys
 sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
 
 import numpy as np
-from sympy import Symbol
 
-from shuffle import BinaryShuffle, GeneratingSeries, iterate_gs
+from shuffle import binary_shuffle, iterate_gs
+from generating_series import GeneratingSeries
 
-# Defining some symbols that will be used throughout this demonstration.
-x0 = Symbol("x0")
-x1 = Symbol("x1")
-b = Symbol('b')
-a = Symbol('a')
+# Variables that will be used throughout this demonstration.
+x0 = 0
+x1 = 1
+a = 2
+b = 3
 
 
 # Convert a numpy array into a GeneratingSeries instance. The GeneratingSeries
@@ -43,11 +43,8 @@ g0 = GeneratingSeries(np.array([
 # =============================================================================
 # Manual Iteration
 # =============================================================================
-# To calculate higher order terms, call a instance of BinaryShuffle on the 
-# GeneratingSeries objects that you want to shuffle.
-shuffle_object = BinaryShuffle()
 
-g1 = shuffle_object(g0, g0)
+g1 = binary_shuffle(g0, g0)
 print("g1 without multiplier\n", *g1)
 
 # g1 contains the shuffle product of g0 and g0, note that a list type is

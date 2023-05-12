@@ -10,7 +10,7 @@ import subprocess
 
 import numpy as np
 import sympy as sym
-from sympy import Symbol
+from sympy import Symbol, Wild, symbols
 from sympy.core.numbers import Number as SympyNumber
 from sympy.core.mul import Mul as SympyMul
 from sympy.core.power import Pow as SympyPow
@@ -33,7 +33,8 @@ def array_to_fraction(terms):
         bottom_row = term[1][1]
         top_row[top_row == 0] = x0
         top_row[top_row == 1] = Symbol("x1")
-        top_row[top_row == 2] = 1 # Used in imp response for term of len 1.
+        
+        # top_row[top_row == 2] = 1 # Used in imp response for term of len 1.
     
         numerator = prod(top_row)
         denominator = prod([(1 + i*x0) for i in bottom_row])
@@ -141,30 +142,41 @@ def gwn_response(scheme, sigma=1):
             
 
     
-def impulse(scheme):
+def impulse(scheme, amplitude=1):
     """
     Defined in "Functional Analysis of Nonlinear Circuits- a Generating Power
     Series Approach".
     """
     imp = []
     for coeff, term in scheme:
-        numerator = term[0]
-        count = 0
-        for val in numerator:
-            count += np.real(val)
-            if val == 0 and count != 0:
+        x0_storage = []
+        for i, x_i in enumerate(term[0, :]):
+            if x_i == 1:
+                if all(term[0, i:] == 1):
+                    n = int(np.real(np.sum(term[0, :])))
+                    frac = (coeff/factorial(int(n))) / (1 + term[1, i]*Symbol("x0"))
+                    if x0_storage:
+                        for x0_term in x0_storage:
+                            frac *= x0_term
+                    imp.append(amplitude * frac)
                 break
-        else:
-            if len(numerator) != 1:
-                new_term = shfl.GeneratingSeries(term[:, :(-int(count))])
-                imp.append((coeff * (1 / factorial(count)), new_term))
+            elif x_i == 0:
+                x0_storage.append(Symbol("x0") / (1 + term[1, i]*Symbol("x0")))
             else:
-                term[0, 0] = 2
-                imp.append((coeff, term))
-    return imp
+                raise ValueError("Unknown term in 0th row.")
 
-          
-def matlab_partfrac(scheme, filename="terms", delete_files=True):
+    return imp
+ 
+    
+def deterministic_response(scheme, excitation):
+    """
+    
+    """
+    raise NotImplementedError
+
+
+         
+def matlab_partfrac(scheme, filename="terms", precision=None, delete_files=True):
     """
                         ****** VERY HACKY ******
     
@@ -178,6 +190,8 @@ def matlab_partfrac(scheme, filename="terms", delete_files=True):
     """
     with open(f"{filename}_python.txt", 'w') as f:
         for term in scheme:
+            if precision:
+                term = term.evalf(precision)
             str_term = str(term).replace("**", '^').replace('I', 'i')+ "\n"
             f.write(str_term)
     run_str = "matlab -nosplash -nodesktop -wait -r"
@@ -189,6 +203,7 @@ def matlab_partfrac(scheme, filename="terms", delete_files=True):
     sum_of_partials = []
     with open(f"{filename}_MATLAB.txt") as file:
         while line := file.readline():
+            # print(line)
             sum_of_partials.append(eval(line.rstrip()))
     
     if delete_files:
@@ -199,34 +214,37 @@ def matlab_partfrac(scheme, filename="terms", delete_files=True):
 
 
     
+
+    
     
 # =============================================================================
 # Converting to the time domain.
 # =============================================================================
 def get_symbol(term):
     symbol = list(term.free_symbols)
-    only_one_symbol = (len(symbol) == 1)
+    
+    if (len(symbol) != 1):
+        raise ValueError("The should only be one symbol in the term.")
 
-    return symbol[0], only_one_symbol
+    return symbol[0]
 
 
-def get_exponent(term):
-    if isinstance(term, (SympySymbol, SympyPow)):
-        return sym.log(term).expand(force=True).as_coeff_Mul()
-    else:
-        raise TypeError("Needs to be a sympy.core.power.Pow object.")
- 
- 
-def _check_form(term):
+def convert_term(term):
     """
     Checks against each of the required forms, if the correct form is
     identified the inverse laplace borel transform of it is returned. If the 
     term fits no form, an error it raised.
     """
-    for form in [lb_unit, lb_polynomial, lb_exponential, lb_cosine]:
-        term_ts = form(term)
-        if term_ts:
-            return term_ts
+    func_pairs = (
+        (is_unit_form,        lb_unit),
+        (is_polynomial_form,  lb_polynomial),
+        (is_exponential_form, lb_exponential),
+        (is_cosine_form,      lb_cos),
+    )
+    
+    for (form_test, converter) in func_pairs:
+        if form_test(term):
+            return converter(term)
     else:
         raise TypeError(f"Term is of an unknown form.\n\n{term}")
     
@@ -243,12 +261,14 @@ def inverse_lb(sum_of_fractions):
     for term in sum_of_fractions:
         if isinstance(term, SympyAdd):
             for term1 in term.make_args(term):
-                term_ts = _check_form(term1)
-                ts += term_ts  
+                ts += convert_term(term1)
         else:
-            term_ts = _check_form(term)
-            ts += term_ts    
-
+            term_ts = convert_term(term)
+            ts += term_ts
+        
+        # value = ts.subs({Symbol('t'): 5})
+        # if abs(value) > 10:
+        #     print(f"term is greater with a value of {value}\n\n", term, end="\n\n\n")
     return ts
 
 
@@ -260,221 +280,169 @@ def is_unit_form(term):
     return isinstance(term, (SympyNumber, int, float))
 
 
-def lb_polynomial(term):
-    """
-    Determines whether the term is of polynomial form. There are two potential
-    cases for the polynomial form, a * x ** b (type Mul) or x ** b (type Pow),
-    so we need to check for both of these cases. If the term is of the first
-    case, we reduce it to the second case and then checks are the same after.
-    We check the log of the term, if it as a number coeffcient and that the
-    other part is the log of the symbol, if so, this can only be of polynomial
-    form.
-    
-    
-    There is similar functionality across these function, these definitely 
-    can be refactored.
-    """
-    t = Symbol('t')
-
-    was_mul = False # Check for the type was mul or pow.
-    cond1 = False   # Check if 'a' is number in the form a * x ** b.
-    cond2 = False   # Check if the exponent is an integer.
-    cond3 = False   # Check if the remaining term is log(x).
-    
-    if is_unit_form(term): # Fail-fast for unit form.
-        return False
-    
-    symbol, only_one_symbol = get_symbol(term)
-    if not only_one_symbol: # Test to see if there is only one variable.
-        return False
-        
-    if isinstance(term, SympySymbol): # If term is just a symbol.
-        return t    
-    
-    if isinstance(term, SympyMul):
-        was_mul = True
-        coeff1, term = term.as_coeff_Mul()
-        cond1 = is_unit_form(coeff1)
-        
-    if isinstance(term, (SympyPow, SympySymbol)):
-        if not was_mul:
-            coeff1 = 1
-            cond1 = True
-        exponent, log_term = get_exponent(term)
-        cond2 = (float(exponent) == int(exponent) and is_unit_form(exponent))
-        cond3 = (log_term == sym.log(symbol)) 
-        
-    if (cond1 and cond2 and cond3):
-        a = coeff1
-        b = exponent
-        
-        to_return = (a * t ** b / sym.factorial(b))
-        to_return = sym.simplify(to_return)
-        
-        return to_return
-
-
-def lb_exponential(term):
-    """
-    Determines whether the term is of exponential form.
-    
-    There is similar functionality across these function, these definitely 
-    can be refactored.
-    """
-    t = Symbol('t')
-
-    if is_unit_form(term): # Fail-fast for unit form.
-        return False
-
-    symbol, only_one_symbol = get_symbol(term)
-    if not only_one_symbol: # Test to see if there is only one variable.
-        return False
-
-    was_mul1 = False
-    
-    # At this point term can be either SympyMul or SympyPow. If SympyPow,
-    # reduce to SympyMul.
-    if isinstance(term, SympyMul):
-        was_mul1 = True
-        coeff1, term = term.as_coeff_Mul()
-    
-    if isinstance(term, SympyPow):
-        if not was_mul1:
-            coeff1 = 1
-        exponent, log_term = get_exponent(term)
-        # Check if the exponent is a negative integer. 
-        good_exponent = (float(exponent) == int(exponent)) and exponent < 0
-        if not (good_exponent and is_unit_form(exponent)):
-            return False
-    else:
-        return False
-
-    term = sympyexp(log_term)
-    
-    # Check if the denominator has type SympyAdd.
-    if not isinstance(term, SympyAdd):
-        return False
-    
-    unit, term = term.as_coeff_Add()
-    if not is_unit_form(unit): # Check if the unit is unit form.
-        return False
-
-    # Check if the symbol side is SympyMul, if so reduce to a SympySymbol.
-    if isinstance(term, SympyMul):
-        coeff2, dummy_term = term.as_coeff_Mul()
-    elif term == symbol:
-        dummy_term = term
-    else:
-        return False
-    if not dummy_term == symbol:
-        return False
-       
-    coeff2 = term.subs(symbol, 1)
-    
-    # Handling the conversion of the laplace-borel transform.
-    a = -coeff2
-    n = -exponent
-
-    if unit != 1:
-        a /= unit
-        coeff1 /= unit ** n
-        unit = 1
-    ts = 0
-    
-    # print(f"a = {a}, n = {n}, coeff1 = {coeff1}")
-    for i in range(n):
-        ts += (comb(n-1, i) / sym.factorial(i)) * (a * t) ** i
-    ts *= (coeff1 * sympyexp(a * t))
-
-    return ts
-    
-
-def lb_cosine(term):
-    """
-    Tests whether the term is of cosine form.
-    
-    There is similar functionality across these function, these definitely 
-    can be refactored.
-    """
-    t = Symbol('t')
-
-    if is_unit_form(term): # Fail-fast for unit form.
-        return False
-    
-    symbol, only_one_symbol = get_symbol(term)
-    if not only_one_symbol: # Test to see if there is only one variable.
-        return False
-    
-    was_mul = False
-    # At this point term can be either SympyMul or SympyPow. If SympyPow,
-    # reduce to SympyMul.
-    if isinstance(term, SympyMul):
-        was_mul = True
-        coeff1, term = term.as_coeff_Mul()
-        
-    if isinstance(term, SympyPow):
-        if not was_mul:
-            coeff1 = 1
-        exponent, log_term = get_exponent(term)
-        # Check if the exponent is a negative integer. 
-        good_exponent = (float(exponent) == int(exponent)) and exponent == -1
-        if not (good_exponent and is_unit_form(exponent)):
-            return False
-    else:
-        return False
-    
-    term = sympyexp(log_term)
-    
-    # Check if the denominator is of type SympyAdd.
-    if isinstance(term, SympyAdd):
-        unit, term = term.as_coeff_Add()
-        if not is_unit_form(unit):
-            return False
-    else: 
-        return False
-    
-    # Determine the coefficient of the Symbol.
-    if isinstance(term, SympyMul):
-        coeff2, term = term.as_coeff_Mul()
-    elif isinstance(term, SympyPow):
-        coeff2 = term.subs(symbol, 1)
-    else:
-        return False
-    
-    # Ensure that the signs are the same.
-    if np.sign(unit) != np.sign(coeff2):
-        return False
-    
-    # Check for an exponent of 2 on the symbol.
-    if isinstance(term, SympyPow):
-        exponent, log_term = get_exponent(term)
-        if not exponent == 2:
-            return False
-        if not (log_term == sym.log(symbol)):
-            return False
-    else:
-        return False
-    
-    # coeff1, coeff2, unit
-    if unit != 1:
-        coeff1 /= unit
-        coeff2 /= unit
-        unit = 1
-
-    return coeff1 * sym.cos(sym.sqrt(coeff2) * t)
-
-
 def lb_unit(term):
     """
     
     """
-    correct_form = is_unit_form(term)
-    
-    if correct_form:
-        return term
-    else:
-        return False
+    return term
 
+
+def is_polynomial_form(term):
+    """
+    Tests whether the term is of polynomial form.
+    """
+    if is_unit_form(term):
+        return False
+    
+    x0 = get_symbol(term)
+    a = Wild("a", exclude=[x0, 0])
+    n = Wild("n")
+        
+    polynomial_form = a * x0 ** n
+    
+    match = term.match(polynomial_form)
+    if match:
+        if not match[n].is_integer:
+            return False
+    
+    return match
+
+
+def lb_polynomial(term):
+    """
+    a * x ** n
+    """
+    x0 = get_symbol(term)
+    a = Wild("a", exclude=[x0, 0])
+    n = Wild("n", exclude=[0])
+        
+    polynomial_form = a * x0 ** n
+    
+    match = term.match(polynomial_form)
+    n = match[n]
+    a = match[a]
+    
+    t = Symbol("t")
+    
+    return (a / sym.factorial(n)) * t ** n
+
+
+def is_exponential_form(term):
+    """
+    Tests whether the term is of exponential form.
+    """
+    if is_unit_form(term):
+        return False
+    
+    x0 = get_symbol(term)
+
+    b = Wild("b", exclude=[x0])
+    c = Wild("c", exclude=[x0])
+    d = Wild("d", exclude=[x0])
+    n = Wild("n")
+        
+    a, denom = term.as_numer_denom()
+    
+    if a.free_symbols:
+        return False
+    
+    denom_form = b * (c + d*x0) ** n
+    match = denom.match(denom_form)
+    
+    if match:
+        if not match[n].is_integer:
+            return False       
+    
+    return match
+
+
+def lb_exponential(term):
+    """
+    a / b * (c + d*x0) ** -n
+    """
+    x0 = get_symbol(term)
+
+    b = Wild("b", exclude=[x0])
+    c = Wild("c", exclude=[x0])
+    d = Wild("d", exclude=[x0])
+    n = Wild("n")
+    
+    a, denom = term.as_numer_denom()
+    # print(f"a is {a}")  
+    denom_form = b * (c + d*x0) ** n
+    match = denom.match(denom_form)
+
+    b = match[b]
+    c = match[c]
+    d = -match[d]
+    n = match[n]
+    
+    t = Symbol("t")
+    
+    coeff1 = a / (b * c **n)
+    coeff2 = d / c
+    # print(coeff2)
+    # if coeff2 > 0:
+    #     print(f"coeff2 is positive {term}")
+
+    ts = 0
+    for i in range(n):
+        ts += (comb(n-1, i) / sym.factorial(i)) * (coeff2 * t) ** i
+    ts *= (coeff1 * sympyexp(coeff2 * t))
+
+    return ts
+
+
+def is_cosine_form(term):
+    """
+    Tests whether the term is of cosine form.
+    """
+    if is_unit_form(term):
+        return False
+    
+    x0 = get_symbol(term)
+    a = Wild("a", exclude=[x0, 0])
+    b = Wild("b", exclude=[x0, 0])
+    c = Wild("c", exclude=[x0, 0])
+    n = Wild("n", exclude=[x0, 0])
+    
+    cosine_form = a * (b + c*x0**2) ** -n
+    
+    match = term.match(cosine_form)
+    
+    if match:
+        if not match[n].is_integer:
+            return False
+    
+    return match
+
+
+def lb_cosine(term):
+    """
+    a * (b + c*x**2) ** -1
+    """
+    x0 = get_symbol(term)
+    a = Wild("a", exclude=[x0, 0])
+    b = Wild("b", exclude=[x0, 0])
+    c = Wild("c", exclude=[x0, 0])
+    n = Wild("n", exclude=[x0, 0])
+    
+    cosine_form = a * (b + c*x0**2) ** -n
+    
+    match = term.match(cosine_form)
+
+    a = match[a]
+    b = match[b]
+    c = match[c]
+    n = match[n]
+    
+    t = Symbol("t")
+    
+    coeff1 = a / b**n
+    coeff2 = sym.sqrt(c / b)
+    
+    return coeff1 * sym.cos(coeff2 * t)
+    
 
 def lb_sin(term):
     """

@@ -4,6 +4,9 @@ Created on Wed Apr 19 13:07:57 2023
 
 @author: trist
 """
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
 import unittest
 
 import numpy as np
@@ -83,20 +86,6 @@ class TestPartitions(unittest.TestCase):
                 for part in parts:
                     assert sum(part) == iter_depth
                     assert len(part) == n_shuffles
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

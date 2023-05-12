@@ -11,7 +11,9 @@ fid = fopen(strcat(filename, '_python.txt'));
 
 while ~feof(fid)
     term = eval(fgetl(fid));
-    term = partfrac(term);
+    if isa(term, 'sym')
+        term = partfrac(term);
+    end
     term_str = string(term).replace('^', "**").replace('i', 'j');
     writelines(term_str, strcat(filename, "_MATLAB.txt"), WriteMode="append");
 end
