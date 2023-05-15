@@ -5,20 +5,23 @@ Created on Fri Apr 14 15:57:45 2023
 @author: trist
 """
 import os
+import sys
 from math import factorial, prod, comb
 import subprocess
+from collections import defaultdict
+from itertools import product
+from operator import itemgetter
 
 import numpy as np
 import sympy as sym
-from sympy import Symbol, Wild, symbols
+from sympy import Symbol, Wild
 from sympy.core.numbers import Number as SympyNumber
-from sympy.core.mul import Mul as SympyMul
-from sympy.core.power import Pow as SympyPow
-from sympy.core.symbol import Symbol as SympySymbol
 from sympy.core.add import Add as SympyAdd
 from sympy.functions.elementary.exponential import exp as sympyexp
 
+sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
 import shuffle as shfl
+from generating_series import GeneratingSeries
 
 
 def array_to_fraction(terms):
@@ -84,14 +87,14 @@ def step_input(scheme, amplitude=1):
     """
     step_gs = []
     for term in array_to_fraction(scheme):
-        step_gs.append(term.subs({Symbol("x1") : amplitude * Symbol("x0")}))
+        step_gs.append(term.subs({Symbol("x1"): amplitude * Symbol("x0")}))
         
-    return step_gs      
+    return step_gs
 
 
 def gwn_response(scheme, sigma=1):
     """
-    Calculates the GWN response given an input generating series. 
+    Calculates the GWN response given an input generating series.
     """
     gwn = []
     
@@ -141,11 +144,13 @@ def gwn_response(scheme, sigma=1):
     return array_to_fraction(gwn)
             
 
-    
 def impulse(scheme, amplitude=1):
     """
     Defined in "Functional Analysis of Nonlinear Circuits- a Generating Power
     Series Approach".
+    
+    This is used if the generating series have already been expanded. For
+    efficiency use impulse_from_iter().
     """
     imp = []
     for coeff, term in scheme:
@@ -154,7 +159,9 @@ def impulse(scheme, amplitude=1):
             if x_i == 1:
                 if all(term[0, i:] == 1):
                     n = int(np.real(np.sum(term[0, :])))
-                    frac = (coeff/factorial(int(n))) / (1 + term[1, i]*Symbol("x0"))
+                    frac = (
+                        (coeff/factorial(int(n))) / (1+term[1, i]*Symbol("x0"))
+                    )
                     if x0_storage:
                         for x0_term in x0_storage:
                             frac *= x0_term
@@ -166,17 +173,63 @@ def impulse(scheme, amplitude=1):
                 raise ValueError("Unknown term in 0th row.")
 
     return imp
- 
+
+
+def impulse_from_iter(
+        g0, multipliers, n_shuffles, iter_depth=2, amplitude=1):
+    """
+    The idea here centers around the fact that most of the term in the impulse
+    response are thrown away. So when iterating the generating series, the
+    terms that will definitely not result in any terms later on can be thrown
+    away early, therefore we no longer have to expand these terms, this results
+    in a efficiency gains when comparing to expanding the generating series
+    and then applying the impulse response.
+    """
+    multipliers = shfl.wrap_term(multipliers, np.ndarray)
+    g0 = shfl.wrap_term(g0, GeneratingSeries)
     
+    term_storage = defaultdict(list)
+    term_storage[0].extend(g0)
+    
+    for depth in range(iter_depth):
+        for part in shfl.partitions(depth, n_shuffles):
+            # Cartesian product of all the inputs, instead of nested for-loop.
+            terms = itemgetter(*part)(term_storage)
+            for in_perm in product(*terms):
+                term_storage[depth + 1].extend(shfl.nShuffles(*in_perm))
+            term_storage[depth + 1] = shfl.collect(term_storage[depth + 1])
+            
+        # After the shuffles for this iteration's depth have been caluclated,
+        # prepend the multiplier to each term.
+        next_terms = []
+        for gs_term in term_storage[depth + 1]:
+            been_1 = False
+            for x in gs_term[0, 1:]:
+                if x == 1:
+                    been_1 = True
+                
+                elif been_1 and x == 0:
+                    break
+            else:
+                for multiplier in multipliers:
+                    next_terms.append(gs_term.prepend_multiplier(multiplier))
+
+        term_storage[depth + 1] = next_terms
+        
+    tuple_form = shfl.handle_output_type(term_storage, tuple)
+    
+    return impulse(tuple_form, amplitude)
+  
+  
 def deterministic_response(scheme, excitation):
     """
     
     """
     raise NotImplementedError
 
-
-         
-def matlab_partfrac(scheme, filename="terms", precision=None, delete_files=True):
+      
+def matlab_partfrac(
+        scheme, filename="terms", precision=None, delete_files=True):
     """
                         ****** VERY HACKY ******
     
@@ -192,10 +245,10 @@ def matlab_partfrac(scheme, filename="terms", precision=None, delete_files=True)
         for term in scheme:
             if precision:
                 term = term.evalf(precision)
-            str_term = str(term).replace("**", '^').replace('I', 'i')+ "\n"
+            str_term = str(term).replace("**", '^').replace('I', 'i') + "\n"
             f.write(str_term)
     run_str = "matlab -nosplash -nodesktop -wait -r"
-    run_str += " \"addpath('../shuffleproduct/');" 
+    run_str += " \"addpath('../shuffleproduct/');"
     run_str += f"partial_fractions('{filename}'); exit\""
     subprocess.run(run_str)
     
@@ -213,10 +266,6 @@ def matlab_partfrac(scheme, filename="terms", precision=None, delete_files=True)
     return sum_of_partials
 
 
-    
-
-    
-    
 # =============================================================================
 # Converting to the time domain.
 # =============================================================================
@@ -232,7 +281,7 @@ def get_symbol(term):
 def convert_term(term):
     """
     Checks against each of the required forms, if the correct form is
-    identified the inverse laplace borel transform of it is returned. If the 
+    identified the inverse laplace borel transform of it is returned. If the
     term fits no form, an error it raised.
     """
     func_pairs = (
@@ -268,13 +317,15 @@ def inverse_lb(sum_of_fractions):
         
         # value = ts.subs({Symbol('t'): 5})
         # if abs(value) > 10:
-        #     print(f"term is greater with a value of {value}\n\n", term, end="\n\n\n")
+        #     print(
+        # f"term is greater with a value of {value}\n\n", term, end="\n\n\n"
+        # )
     return ts
 
 
 def is_unit_form(term):
     """
-    Determines whether the term is of unit form, both sympy Float and 
+    Determines whether the term is of unit form, both sympy Float and
     sympy Integer inherit from sympy Number.
     """
     return isinstance(term, (SympyNumber, int, float))
@@ -351,7 +402,7 @@ def is_exponential_form(term):
     
     if match:
         if not match[n].is_integer:
-            return False       
+            return False
     
     return match
 
@@ -368,7 +419,7 @@ def lb_exponential(term):
     n = Wild("n")
     
     a, denom = term.as_numer_denom()
-    # print(f"a is {a}")  
+    # print(f"a is {a}")
     denom_form = b * (c + d*x0) ** n
     match = denom.match(denom_form)
 
@@ -379,7 +430,7 @@ def lb_exponential(term):
     
     t = Symbol("t")
     
-    coeff1 = a / (b * c **n)
+    coeff1 = a / (b * c ** n)
     coeff2 = d / c
     # print(coeff2)
     # if coeff2 > 0:
@@ -478,6 +529,7 @@ def lb_cosh(term):
     LB(cosh(wt)) = 1 / (1 - w**2 x0**2)
     """
     pass
+
 
 def time_function(time_domain):
     """

@@ -7,7 +7,8 @@ Created on Fri May 12 07:57:47 2023
 """
 import numpy as np
 
-class GeneratingSeries():    
+
+class GeneratingSeries():
     __slots__ = ("array", "gs_hash")
     
     def __init__(self, array):
@@ -19,17 +20,17 @@ class GeneratingSeries():
         """
         if array.dtype == complex:
             self.array = array.astype(np.cdouble)
+        
         elif array.dtype == object:
             raise TypeError(
-                "Numpy object arrays give nondeterministic caching as they"\
+                "Numpy object arrays give nondeterministic caching as they"
                 " contain pointers."
-                )
+            )
         else:
             self.array = array.astype(np.double)
 
         self.gs_hash = hash(self)
                
-    
     def __hash__(self):
         """
         Hash of all the terms except for the coefficient.
@@ -38,7 +39,6 @@ class GeneratingSeries():
         bottom = self.array[1, :]
 
         return hash(top.tobytes()) + hash(bottom.tobytes())
-    
     
     def prepend_multiplier(self, multiplier):
         """
@@ -50,7 +50,6 @@ class GeneratingSeries():
         if self.array.shape[1] == 1:
             raise IndexError("Hmmm, very curious case.")
             
-        
         if multiplier.shape[1] == 1:
             arr_copy = np.copy(self.array)
             arr_copy[0, 0] = arr_copy[0, 0] * multiplier[0, 0]
@@ -74,23 +73,18 @@ class GeneratingSeries():
             
             return GeneratingSeries(np.hstack((mult_copy, arr)))
             
-    
     def __len__(self):
         return self.shape[1]
-    
     
     def __str__(self):
         return str(self.array)
     
-    
     def __getitem__(self, indices):
         return self.array[indices]
     
-    
     def __setitem__(self, indices, obj):
         self.array[indices] = obj
-        
-        
+          
     def __eq__(self, other_obj):
         """
         Check if everything other than the coefficient are the same.
@@ -99,33 +93,29 @@ class GeneratingSeries():
             return False
         
         return self.gs_hash == other_obj.gs_hash
-        
-        
+           
     def hard_equals(self, other_obj):
         """
         This is used for unit testing, when we want to include the coefficient
         in the comparison.
         """
         return np.array_equal(self.array, other_obj.array)
-    
-    
+
     def __add__(self, other_obj):
         if not (self == other_obj):
             raise ValueError("Cannot add different Generating Series.")
         else:
-            return self.array[0, 0] + other_obj[0, 0]  
-    
+            return self.array[0, 0] + other_obj[0, 0]
     
     def _fast_iadd(self, other_obj):
         """
-        Used in functions that satisfy the conditions, could give errors if 
+        Used in functions that satisfy the conditions, could give errors if
         not careful.
         """
-        self.array[0, 0] = self.array[0, 0] + other_obj[0, 0]  
+        self.array[0, 0] = self.array[0, 0] + other_obj[0, 0]
         
         return self
         
-    
     def __iadd__(self, other_obj):
         if not isinstance(other_obj, GeneratingSeries):
             raise TypeError("Cannot add GeneratingSeries to another type.")
@@ -136,6 +126,9 @@ class GeneratingSeries():
             self._fast_iadd(other_obj)
             
         return self
+    
+    def copy(self):
+        return GeneratingSeries(self.array.copy())
     
     @property
     def shape(self):
