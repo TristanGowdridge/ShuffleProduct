@@ -18,6 +18,7 @@ import responses as rsps
 x0 = Symbol("x0")
 x1 = Symbol("x1")
 
+
 class TestArray2Fraction(unittest.TestCase):
     """
     
@@ -31,7 +32,7 @@ class TestArray2Fraction(unittest.TestCase):
         gs_f are the fractions given in paper 0.
         gs are the terms from the paper I coded them up in array form.
         
-        Sympy is struggling to equate things that are the same again, therefore 
+        Sympy is struggling to equate things that are the same again, therefore
         the assertions are checking that the difference is less than a
         very small threshold. This is done at three different test points.
         """
@@ -49,7 +50,7 @@ class TestArray2Fraction(unittest.TestCase):
         gs_f +=   4*(1+  x0)**-1 *x0* (1+3*x0)**-1 *x1* (1+2*x0)**-1 *x1* (1+  x0)**-1 *x0* (1+3*x0)**-1 *x1* (1+2*x0)**-1 *x1* (1+  x0)**-1 *x1
         gs_f = gs_f.make_args(gs_f)
         
-        sort_key = lambda x: x.subs({x0:1, x1: 2})
+        sort_key = lambda x: x.subs({x0: 1, x1: 2})
         gs_f = sorted(gs_f, key=sort_key)
         
         # Handling the array form.
@@ -60,15 +61,14 @@ class TestArray2Fraction(unittest.TestCase):
         gs_a2f = rsps.array_to_fraction(gs)
         gs_a2f = sorted(gs_a2f, key=sort_key)
         
-        vals2 = lambda x: x.subs({x0:2, x1: 3})
-        vals3 = lambda x: x.subs({x0:4, x1: 5})
+        vals2 = lambda x: x.subs({x0: 2, x1: 3})
+        vals3 = lambda x: x.subs({x0: 4, x1: 5})
         threshold = 1e-10
         for i, j in zip(gs_f, gs_a2f):
             assert abs(sort_key(i) - sort_key(j)) < threshold
             assert abs(vals2(i) - vals2(j)) < threshold
             assert abs(vals3(i) - vals3(j)) < threshold
                 
-        
-        
+               
 if __name__ == "__main__":
     unittest.main()

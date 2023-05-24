@@ -22,10 +22,11 @@ a = 2
 b = 3
 t = Symbol('t')
 
+
 class TestPaper0(unittest.TestCase):
     """
-    Compares the response to paper 0 in the papers directory. "Functional 
-    analysis of nonlinear circuits: a generating power series approach" - 
+    Compares the response to paper 0 in the papers directory. "Functional
+    analysis of nonlinear circuits: a generating power series approach" -
     M.Lamnabhi.
     
     Note there is a typo in the paper, the third order 5 term should read:
@@ -36,9 +37,9 @@ class TestPaper0(unittest.TestCase):
     g0 = __import__("test_EquivalenceGS").TestPaperImp.g0
     iter_args = __import__("test_EquivalenceGS").TestPaperImp.iter_args
     
-    imp_time = exp(-t)                                       # Order 1
-    imp_time += 1/2*exp(-3*t) - 1/6*exp(-t)                  # Order 3
-    imp_time += 5/8*exp(-5*t) - 1/4*exp(-3*t) - 1/24*exp(-t) # Order 5   
+    imp_time = exp(-t)                                        # Order 1
+    imp_time += 1/2*exp(-3*t) - 1/6*exp(-t)                   # Order 3
+    imp_time += 5/8*exp(-5*t) - 1/4*exp(-3*t) - 1/24*exp(-t)  # Order 5
     
     def test_impulse_response(self):
         scheme = shfl.iterate_gs(*TestPaper0.iter_args, iter_depth=2)
@@ -54,7 +55,7 @@ class TestPaper0(unittest.TestCase):
 class TestPaper4(unittest.TestCase):
     """
     Compares the responses obtained to paper 4 in the papers directory.
-    "Algebraic Computation of the Solutions of Some Nonlinear Differential 
+    "Algebraic Computation of the Solutions of Some Nonlinear Differential
     Equations" - F.Lamnabhi-Lagarrigue.
     """
     multiplier = np.array([
@@ -83,8 +84,8 @@ class TestPaper4(unittest.TestCase):
 class TestPaper5(unittest.TestCase):
     """
     Compares the responses obtained to paper 4 in the papers directory.
-    "Algebraic Computation of the Statistics of the Solution of Some Stochastic
-    Differential Equations" - F.Lamnabhi-Lagarrigue.
+    "Algebraic Computation of the Statistics of the Solution of Some
+    Stochastic Differential Equations" - F.Lamnabhi-Lagarrigue.
     """
     multiplier = TestPaper4.multiplier
     g0 = TestPaper4.g0
@@ -93,6 +94,7 @@ class TestPaper5(unittest.TestCase):
     def test_gwn(self):
         print("Not Implemented gwn test.")
         pass
-        
+  
+      
 if __name__ == "__main__":
     unittest.main()

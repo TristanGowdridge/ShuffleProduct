@@ -4,6 +4,7 @@ Created on Thu May 11 17:10:37 2023
 
 @author: trist
 
+Collect like terms in the cache.
 """
 import functools
 import copy
@@ -26,7 +27,7 @@ def shuffle_cacher(func):
         # Sort the arguments to give ~2x cache hits.
         args = sorted(args, key=hash)
         
-        key = tuple([hash(gs) for gs in args])
+        key = tuple([gs.gs_hash for gs in args])
         coeff = 1
         for gs in args:
             coeff *= gs[0, 0]
@@ -53,127 +54,228 @@ def shuffle_cacher(func):
     return wrapper
 
 
-def reduction_term(g1, g2):
-    """
-    Gets the term to append to the stack when reducing g1.
-    """
-    reduction = np.array([
-        [g1[0]       ],
-        [g1[1] + g2[1]]
-    ])
-    return reduction
-
-
-def add_to_stack(grid_sec, count, new_term, current_stack):
-    """
-    appends the term to the stack and places it in the  calls the function to
-    collect the grid
-    """
-    grid_sec.append(
-        (count, np.hstack([new_term, current_stack]))
-    )
-    
-    
-def collect_grid(terms):
-    """
-    
-    """
-    instance_counter = defaultdict(int)
-    term_storage = dict()
-    
-    for count, term in terms:
-        gs_hash = hash(term.tobytes())
-        instance_counter[gs_hash] += count
-        if gs_hash not in term_storage:
-            term_storage[gs_hash] = term
-    
-    collected_terms = []
-    for key, term in term_storage.items():
-        temp_term = (instance_counter[key], term)
-        collected_terms.append(temp_term)
-    
-    return collected_terms
-
-
 @shuffle_cacher
-def binary_shuffle(gs1, gs2):
+def binary_shuffle(
+        gs1: GeneratingSeries, gs2: GeneratingSeries
+) -> List[GeneratingSeries]:
     """
-    For the grid first index is number of reductions for gs2, second index is
-    number of reductions of gs1).
-    
-    Break down into functions.
-    
-    Reorder if statements so most likely is first.
-    
-    Dont store whole grid, only a selection is required.
-    
-    List and append, rather than np.hstack then stack at the end.
+    Given two input generating series, this returns the shuffle product of
+    the two generating series. The output is a list of numpy arrays, with
+    each instance of the list being a generating series.
     """
-    
-    end1, gs1 = np.hsplit(gs1, [1])
-    end2, gs2 = np.hsplit(gs2, [1])
-    
-    gs1_len, gs2_len = len(gs1), len(gs2)
-    gs1 = gs1[:, ::-1].T
-    gs2 = gs2[:, ::-1].T
-    
-    grid = [
-        [[] for _ in range(gs1_len+1)] for _ in range(gs2_len+1)
-    ]
-    
-    end = np.array([
-        [end1[0, 0] * end2[0, 0]],
-        [end1[1, 0] + end2[1, 0]]
-    ])
-    
-    for i1 in range(gs1_len+1):
-        is_reducible1 = (i1 < gs1_len)
-        if is_reducible1:
-            g1 = gs1[i1]
+    term_stack = np.array([[], []])
+    coefficient_count = defaultdict(int)
+    term_storage = {}
 
-        for i2 in range(gs2_len+1):
-            is_reducible2 = (i2 < gs2_len)
-            if is_reducible2:
-                g2 = gs2[i2]
-
-            if is_reducible1 and is_reducible2:
-                gs1_reduct = reduction_term(g1, g2)
-                gs2_reduct = reduction_term(g2, g1)
-            
-            elif is_reducible1 and not is_reducible2:
-                gs1_reduct = reduction_term(g1, end2.reshape(-1))
-                
-            elif not is_reducible1 and is_reducible2:
-                gs2_reduct = reduction_term(g2, end1.reshape(-1))
-            
-            current = grid[i2][i1]
-            if current:
-                for count, curr in collect_grid(current):
-                    if is_reducible1 and is_reducible2:
-                        add_to_stack(grid[i2][i1+1], count, gs1_reduct, curr)
-                        # grid[i2][i1+1] = collect_grid(grid[i2][i1+1])
-                        add_to_stack(grid[i2+1][i1], count, gs2_reduct, curr)
-                        # grid[i2+1][i1] = collect_grid(grid[i2+1][i1])
-                
-                    elif is_reducible1 and not is_reducible2:
-                        add_to_stack(grid[i2][i1+1], count, gs1_reduct, curr)
-                        # grid[i2][i1+1] = collect_grid(grid[i2][i1+1])
-                    
-                    elif not is_reducible1 and is_reducible2:
-                        add_to_stack(grid[i2+1][i1], count, gs2_reduct, curr)
-                        grid[i2+1][i1] = collect_grid(grid[i2+1][i1])
-
-            else:
-                grid[i2][i1+1].append((1, gs1_reduct))
-                grid[i1+1][i2].append((1, gs2_reduct))
+    subshuffle(gs1, gs2, term_stack, coefficient_count, term_storage)
     
-    to_return = []
-    for count, term in grid[-1][-1]:
-        temp_term = np.hstack([end, term])
-        temp_term[0, 0] *= count
-        to_return.append(GeneratingSeries(temp_term))
+    return combine_term_and_coefficient(term_storage, coefficient_count)
+
+
+def subshuffle_cacher(func):
+    """
+    If the current shuffle expansion is cached, then this accelerates the
+    calculation to the shuffle terminating criterion (len(gs1) == 1 &
+    len(gs2) == 1) with the term stack difference being appended for the
+    calculation, essentially reducing the order of complexity in this case from
+    O(2 ** (len(gs1) + len(gs2))) -> O(len(gs1) + len(gs2)).
+    """
+    global subshuf_cache
+    # Storage for previously calculated expansions.
+    subshuf_cache = dict()
+    
+    def collect_state_diffs(state_diffs: tuple) -> tuple:
+        """
+        Collects like terms in the cache, resulting in fewer loop iterations
+        when the cached values are looked up.
+        """
+        if len(state_diffs) == 1:
+            return (1, *state_diffs[0]),
         
-    return tuple(to_return)
+        cache_hashes = {}
+        instance_counter = defaultdict(int)
+        for arr, gs1_f, gs2_f in state_diffs:
+            key = hash(
+                arr.tobytes() + gs1_f.array.tobytes() + gs2_f.array.tobytes()
+            )
+            cache_hashes[key] = (arr, gs1_f, gs2_f)
+            instance_counter[key] += 1
+            
+        collected_states = []
+        for key, (arr, gs1_f, gs2_f) in cache_hashes.items():
+            collected_states.append((instance_counter[key], arr, gs1_f, gs2_f))
+            
+        return tuple(collected_states)
+    
+    @functools.wraps(func)
+    def wrapper(
+            gs1: GeneratingSeries, gs2: GeneratingSeries,
+            term_stack: list, *stor_args) -> tuple:
+        
+        # Sort the generating series to ~2x the cache hits.
+        if gs1.gs_hash > gs2.gs_hash:
+            gs1, gs2 = gs2, gs1
+
+        key = (gs1.gs_hash, gs2.gs_hash)
+        coeff = gs1[0, 0] * gs2[0, 0]
+
+        if key not in subshuf_cache:
+            state_diffs, final_states = func(gs1, gs2, term_stack, *stor_args)
+            # subshuf_cache[key] = (coeff, collect_state_diffs(state_diffs))
+            subshuf_cache[key] = (coeff, state_diffs)
+            
+            return state_diffs, final_states
+        
+        else:
+            prev_coeff, state_diffs = subshuf_cache[key]
+            all_final_states = []
+            # for count, stack_diffs, gs1_f, gs2_f in state_diffs:
+            for stack_diffs, gs1_f, gs2_f in state_diffs:
+
+                if coeff != prev_coeff:
+                    gs1_f = copy.deepcopy(gs1_f)
+                    gs1_f[0, 0] *= coeff / prev_coeff
+                    # gs1_f[0, 0] *= count * coeff / prev_coeff
+                # Append the stack_diff so this can now be called the
+                # terminating criterion with gs1_f and gs2_f.
+                full_stack = np.hstack([term_stack, stack_diffs])
+                _, final_states = func(gs1_f, gs2_f, full_stack, *stor_args)
+                all_final_states.extend(final_states)
+            
+            all_state_diffs = stack_difference(final_states, term_stack)
+            
+            return tuple(all_state_diffs), tuple(all_final_states)
+
+    return wrapper
+   
+
+@subshuffle_cacher
+def subshuffle(
+        gs1: GeneratingSeries, gs2: GeneratingSeries, *term_args) -> tuple:
+    """
+    This takes two generating series in the 'array' form that is outlined
+    in Fleiss's papers and calculates the shuffle product based on a
+    recursion over the lengths of the two generating series. The shuffle
+    product terminates when the lengths of the inputs cannot be reduced
+    further.
+    
+    The shuffle product must fit into one of four categories, based on the
+    lengths of the arguments:
+        len(gs1) != 1 and len(gs2) != 1:
+            This case means that both generating series need to be reduced.
+            This case results in the calculation of two more shuffles at this
+            level.
+        len(gs1) != 1 and len(gs2) = 1:
+            This means that only gs1 can be reduced further, therefore
+            resulting in the calculation of one more shuffle at this level.
+        len(gs1) = 1 and len(gs2) != 1:
+            This means that only gs2 can be reduced further, therefore
+            resulting in the calculation of one more shuffle at this level.
+        len(gs1) = 1 and len(gs2) = 1:
+            This is the terminating criterion.
+    """
+    
+    if len(gs1) != 1 and len(gs2) != 1:
+        state_diffs1, states_final1 = reduce_gs(gs1, gs2, *term_args)
+        state_diffs2, states_final2 = reduce_gs(gs2, gs1, *term_args)
+        return (*state_diffs1, *state_diffs2), (*states_final1, *states_final2)
+
+    elif len(gs1) != 1 and len(gs2) == 1:
+        state_diffs, states_final = reduce_gs(gs1, gs2, *term_args)
+        return state_diffs, states_final
+    
+    elif len(gs1) == 1 and len(gs2) != 1:
+        state_diffs, states_final = reduce_gs(gs2, gs1, *term_args)
+        return state_diffs, states_final
+        
+    elif len(gs1) == 1 and len(gs2) == 1:
+        final_states = handle_gs_constants(gs1, gs2, *term_args)
+        term_stack = term_args[0]
+        stack_diffs = stack_difference(final_states, term_stack)
+        return stack_diffs, final_states
+
+
+def reduce_gs(
+        gs1: GeneratingSeries, gs2: GeneratingSeries,
+        term_stack: List[np.ndarray], *stor_args) -> tuple:
+    """
+    Reduces gs1 and makes a call to the shuffle of the reduced term.
+    """
+    temp_term = np.array([
+        [gs1[0, -1]            ],
+        [gs1[1, -1] + gs2[1, -1]]
+    ])
+    # Add the term formed as a result of the reduction to the stack.
+    term_stack = np.hstack([term_stack, temp_term])
+    
+    reduced_gs = GeneratingSeries(gs1[:, :-1])
+    _, states_final = subshuffle(reduced_gs, gs2, term_stack, *stor_args)
+    
+    # Pop from the stack.
+    term_stack = term_stack[:, :-1]
+    
+    state_diffs = stack_difference(states_final, term_stack)
+    
+    return state_diffs, states_final
+
+
+def handle_gs_constants(
+        gs1: GeneratingSeries, gs2: GeneratingSeries, term_stack: list,
+        coefficient_count: defaultdict, term_storage: list
+) -> tuple:
+    """
+    Handles when both generating series have length 1.
+    """
+    final_term = np.array([
+        [gs1[0, 0] * gs2[0, 0]],
+        [gs1[1, 0] + gs2[1, 0]]
+    ])
+
+    term_stack = np.hstack([term_stack, final_term])
+    
+    # Create the GeneratingSeries term now we are at the end of the recursion.
+    temp = GeneratingSeries(term_stack[:, ::-1])
+    temp_hash = temp.gs_hash
+    
+    coefficient_count[temp_hash] += temp[0, 0]
+    term_storage[temp_hash] = temp
+    final_stack = term_stack
+
+    term_stack = term_stack[:, :-1]
+    
+    return ((final_stack, gs1, gs2),)
+
+
+def stack_difference(
+        final_states: tuple, current_term_stack: List[np.ndarray]
+) -> tuple:
+    """
+    Determines the stack difference between the current stack and the final
+    stack. The output of this function is what is stored in subshuf_cache.
+    """
+    current_stack_length = current_term_stack.shape[1]
+        
+    state_diffs = [
+        (final_stack[:, current_stack_length:-1], gs1_f, gs2_f)
+        for final_stack, gs1_f, gs2_f in final_states
+    ]
+        
+    return tuple(state_diffs)
+  
+
+def combine_term_and_coefficient(
+        term_storage: defaultdict, coefficient_count: defaultdict
+) -> tuple[GeneratingSeries]:
+    """
+    Loops over the generating series and applies the coefficient to the term.
+    """
+    hash_output = []
+    for gs_hash, gs_term in term_storage.items():
+        temp = term_storage[gs_hash]
+        temp[0, 0] = coefficient_count[gs_hash]
+        hash_output.append(temp)
+    
+    return tuple(hash_output)
 
 
 def collect(output: List[GeneratingSeries]) -> List[GeneratingSeries]:
@@ -186,8 +288,8 @@ def collect(output: List[GeneratingSeries]) -> List[GeneratingSeries]:
     output_collected = []
     
     for gs in output:
-        coefficient_count[hash(gs)] += gs[0, 0]
-        term_storage[hash(gs)] = gs
+        coefficient_count[gs.gs_hash] += gs[0, 0]
+        term_storage[gs.gs_hash] = gs
 
     for term_hash, coeff in coefficient_count.items():
         temp = term_storage[term_hash]
@@ -433,13 +535,13 @@ if __name__ == "__main__":
         [ a,  0]
     ])
     
-    g0 = GeneratingSeries([
+    g0 = GeneratingSeries(np.array([
         [ 1, x1],
         [ a,  0]
-    ])
+    ]))
     
     from time import perf_counter
     iter_args = (g0, multiplier, 2)
     t0 = perf_counter()
-    scheme = iterate_gs(*iter_args, iter_depth=5)
+    scheme_tab = iterate_gs(*iter_args, iter_depth=5)
     print(perf_counter()-t0)

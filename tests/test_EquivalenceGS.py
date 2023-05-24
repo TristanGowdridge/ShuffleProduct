@@ -6,22 +6,21 @@ Created on Thu May 11 17:27:00 2023
 """
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
 
 import unittest
 import numpy as np
-import shuffle as shfl
 
+sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
 from generating_series import GeneratingSeries
 from shuffle import binary_shuffle
-
-
+import shuffle as shfl
 
 x0 = 0
 x1 = 1
 
 b = 1
 a = 100
+
 
 class TestPaperQuadratic(unittest.TestCase):
     """
@@ -43,93 +42,93 @@ class TestPaperQuadratic(unittest.TestCase):
         [ a,  0]
     ])
     
-    g0 = GeneratingSeries(np.array([
+    g0 = GeneratingSeries([
         [ 1, x1],
         [ a,  0]
-    ]))
+    ])
     
-    g1 = GeneratingSeries(np.array([
+    g1 = GeneratingSeries([
         [-2*b,   x0,   x1,  x1],
         [   a,  2*a,    a,   0]
-    ]))
+    ])
     
     g2 = [
-        GeneratingSeries(np.array([
+        GeneratingSeries([
             [4*b**2,  x0, x1,  x0, x1, x1],
             [     a, 2*a,  a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [12*b**2, x0,  x0,  x1,  x1, x1],
             [     a, 2*a, 3*a, 2*a,   a,  0]
-        ]))
+        ])
     ]
     g2 = sorted(g2, key=hash)
     
     g3 = [
-        GeneratingSeries(np.array([
+        GeneratingSeries([
             [  -8*b**3,  x0, x1,  x0, x1,  x0, x1, x1],
             [        a, 2*a,  a, 2*a,  a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [ -24*b**3,  x0,  x0,  x1, x1, x0, x1, x1],
             [        a, 2*a, 3*a, 2*a,  a, 2*a, a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [ -72*b**3, x0,   x0,  x1,  x0,  x1, x1, x1],
             [        a, 2*a, 3*a, 2*a, 3*a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [ -24*b**3,  x0, x1,  x0,  x0,  x1, x1, x1],
             [        a, 2*a,  a, 2*a, 3*a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [-144*b**3,  x0,  x0,  x0,  x1,  x1, x1, x1],
             [        a, 2*a, 3*a, 4*a, 3*a, 2*a,  a,  0]
-        ]))
+        ])
     ]
     g3 = sorted(g3, key=hash)
     
     g4 = [
-        GeneratingSeries(np.array([
+        GeneratingSeries([
             [  48*b**4,  x0,  x0,  x1, x1,  x0, x1,  x0, x1, x1],
             [        a, 2*a, 3*a, 2*a,  a, 2*a,  a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [ 144*b**4,  x0,  x0,  x1,  x0,  x1, x1,  x0, x1, x1],
             [        a, 2*a, 3*a, 2*a, 3*a, 2*a,  a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [ 432*b**4,  x0,  x0,  x1,  x0,  x1,  x0,  x1, x1, x1],
             [        a, 2*a, 3*a, 2*a, 3*a, 2*a, 3*a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [ 288*b**4,  x0,  x0,  x0,  x1,  x1, x1,  x0, x1, x1],
             [        a, 2*a, 3*a, 4*a, 3*a, 2*a,  a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [ 864*b**4,  x0,  x0,  x0,  x1,  x1,  x0,  x1, x1, x1],
             [        a, 2*a, 3*a, 4*a, 3*a, 2*a, 3*a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [1728*b**4,  x0,  x0,  x0,  x1,  x0,  x1,  x1, x1, x1],
             [        a, 2*a, 3*a, 4*a, 3*a, 4*a, 3*a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [864*b**4,  x0,  x0,  x1,  x0,  x0,  x1,  x1, x1, x1],
             [       a, 2*a, 3*a, 2*a, 3*a, 4*a, 3*a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [144*b**4,  x0,  x0,  x1, x1,  x0,  x0,  x1, x1, x1],
             [       a, 2*a, 3*a, 2*a,  a, 2*a, 3*a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [2880*b**4,  x0,  x0,  x0,  x0,  x1,  x1,  x1, x1, x1],
             [        a, 2*a, 3*a, 4*a, 5*a, 4*a, 3*a, 2*a,  a,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [16*b**4,  x0, x1,  x0, x1,  x0, x1,  x0, x1, x1],
             [      a, 2*a,  a, 2*a,  a, 2*a,  a, 2*a,  a,  0]
-        ]))
+        ])
     ]
     g4 = sorted(g4, key=hash)
     
@@ -143,38 +142,41 @@ class TestPaperQuadratic(unittest.TestCase):
         
         g1_terms = []
         for g1_term in g1:
-            g1_terms.append(g1_term.prepend_multiplier(TestPaperQuadratic.multiplier))
+            g1_terms.append(
+                g1_term.prepend_multiplier(TestPaperQuadratic.multiplier)
+            )
         
-        assert TestPaperQuadratic.g1.hard_equals(g1_terms[0])
-
+        assert np.array_equal(TestPaperQuadratic.g1, g1_terms[0])
 
     def test_g2_manual(self):
         g1 = binary_shuffle(TestPaperQuadratic.g0, TestPaperQuadratic.g0)
         g1_terms = []
         for g1_term in g1:
-            g1_terms.append(g1_term.prepend_multiplier(TestPaperQuadratic.multiplier))
-        
+            g1_terms.append(
+                g1_term.prepend_multiplier(TestPaperQuadratic.multiplier)
+            )
+
         g2 = []
-        for g1_term in g1_terms:   
+        for g1_term in g1_terms:
             g2.extend(binary_shuffle(g1_term, TestPaperQuadratic.g0))
             g2.extend(binary_shuffle(TestPaperQuadratic.g0, g1_term))
+        
         assert (len(g2) == 4)
         
         g2 = shfl.collect(g2)
-        print(f"g2 has a length {len(g2)}")
-        print(g2)
         
         assert (len(g2) == 2)
         
         g2_terms = []
         for g2_term in g2:
-            g2_terms.append(g2_term.prepend_multiplier(TestPaperQuadratic.multiplier))
+            g2_terms.append(
+                g2_term.prepend_multiplier(TestPaperQuadratic.multiplier)
+            )
         
         g2_terms = sorted(g2_terms, key=hash)
         for g2_a, g2_b in zip(g2_terms, TestPaperQuadratic.g2):
-            assert g2_a.hard_equals(g2_b)
+            assert np.array_equal(g2_a, g2_b)
             
-    
     def test_g3_manual(self):
         # Calculate the first shuffle. g0 with g0.
         g1 = binary_shuffle(TestPaperQuadratic.g0, TestPaperQuadratic.g0)
@@ -182,23 +184,26 @@ class TestPaperQuadratic(unittest.TestCase):
         # Prepend the multiplier to each term.
         g1_terms = []
         for g1_term in g1:
-            g1_terms.append(g1_term.prepend_multiplier(TestPaperQuadratic.multiplier))
+            g1_terms.append(
+                g1_term.prepend_multiplier(TestPaperQuadratic.multiplier)
+            )
         
         g2 = []
-        for g1_term in g1_terms:   
+        for g1_term in g1_terms:
             g2.extend(binary_shuffle(g1_term, TestPaperQuadratic.g0))
             g2.extend(binary_shuffle(TestPaperQuadratic.g0, g1_term))
         g2 = shfl.collect(g2)
         
         g2_terms = []
         for g2_term in g2:
-            g2_terms.append(g2_term.prepend_multiplier(TestPaperQuadratic.multiplier))
-        
+            g2_terms.append(
+                g2_term.prepend_multiplier(TestPaperQuadratic.multiplier)
+            )
         
         g2_terms = sorted(g2_terms, key=hash)
 
         for g2_a, g2_b in zip(g2_terms, TestPaperQuadratic.g2):
-            assert g2_a.hard_equals(g2_b)
+            assert np.array_equal(g2_a, g2_b)
 
         g3 = []
         for g2_term in g2_terms:
@@ -215,72 +220,75 @@ class TestPaperQuadratic(unittest.TestCase):
         g3_terms = sorted(g3_terms, key=hash)
     
         for g3_a, g3_b in zip(g3_terms, TestPaperQuadratic.g3):
-            assert g3_a.hard_equals(g3_b) 
-        
-        
-        
+            assert np.array_equal(g3_a, g3_b)
+           
     def test_g1_nShuffles(self):
         g1 = shfl.nShuffles(TestPaperQuadratic.g0, TestPaperQuadratic.g0)
         g1_terms = []
         for g1_term in g1:
-            g1_terms.append(g1_term.prepend_multiplier(TestPaperQuadratic.multiplier))
+            g1_terms.append(
+                g1_term.prepend_multiplier(TestPaperQuadratic.multiplier)
+            )
             
-        assert TestPaperQuadratic.g1.hard_equals(g1_terms[0])
+        assert np.array_equal(TestPaperQuadratic.g1, g1_terms[0])
         
-
     def test_g2_nShuffles(self):
         g1 = shfl.nShuffles(TestPaperQuadratic.g0, TestPaperQuadratic.g0)
         g1_terms = []
         for g1_term in g1:
-            g1_terms.append(g1_term.prepend_multiplier(TestPaperQuadratic.multiplier))
+            g1_terms.append(
+                g1_term.prepend_multiplier(TestPaperQuadratic.multiplier)
+            )
         
         g2 = []
-        for gs_term in g1_terms:   
+        for gs_term in g1_terms:
             g2.extend(shfl.nShuffles(gs_term, TestPaperQuadratic.g0))
             g2.extend(shfl.nShuffles(TestPaperQuadratic.g0, gs_term))
         g2 = shfl.collect(g2)
         
-        assert(len(g2) == 2)
+        assert (len(g2) == 2)
         
         g2_terms = []
         for g2_term in g2:
-            g2_terms.append(g2_term.prepend_multiplier(TestPaperQuadratic.multiplier))
+            g2_terms.append(
+                g2_term.prepend_multiplier(TestPaperQuadratic.multiplier)
+            )
         
         g2_terms = sorted(g2_terms, key=hash)
         for g2_a, g2_b in zip(g2_terms, TestPaperQuadratic.g2):
-            assert g2_a.hard_equals(g2_b) 
-    
+            assert np.array_equal(g2_a, g2_b)
     
     def test_iterate_gs1(self):
         gs_term = 1
-        all_gs = shfl.iterate_gs(*TestPaperQuadratic.iter_args, iter_depth=gs_term,
-                        return_type=dict)
+        all_gs = shfl.iterate_gs(
+            *TestPaperQuadratic.iter_args, iter_depth=gs_term, return_type=dict
+        )
         g1 = all_gs[gs_term][0]
         
-        assert g1.hard_equals(TestPaperQuadratic.g1)
-
+        assert np.array_equal(g1, TestPaperQuadratic.g1)
 
     def test_iterate_gs2(self):
         gs_term = 2
-        all_gs = shfl.iterate_gs(*TestPaperQuadratic.iter_args, iter_depth=gs_term,
-                        return_type=dict)
+        all_gs = shfl.iterate_gs(
+            *TestPaperQuadratic.iter_args, iter_depth=gs_term, return_type=dict
+        )
         g2 = all_gs[gs_term]
-        
+
         g2_terms = sorted(g2, key=hash)
         for g2_a, g2_b in zip(g2_terms, TestPaperQuadratic.g2):
-            assert g2_a.hard_equals(g2_b)
-
+            assert np.array_equal(g2_a, g2_b)
 
     def test_iterate_gs3(self):
         gs_term = 3
-        all_gs = shfl.iterate_gs(*TestPaperQuadratic.iter_args, iter_depth=gs_term,
-                        return_type=dict)
+        all_gs = shfl.iterate_gs(
+            *TestPaperQuadratic.iter_args, iter_depth=gs_term, return_type=dict
+        )
         g3 = all_gs[gs_term]
         
         g3_terms = sorted(g3, key=hash)
-        for g3_a, g3_b in zip(g3_terms, TestPaperQuadratic.g3):
-            assert g3_a.hard_equals(g3_b)
 
+        for g3_a, g3_b in zip(g3_terms, TestPaperQuadratic.g3):
+            assert np.array_equal(g3_a, g3_b)
 
     def test_iterate_gs4(self):
         """
@@ -288,43 +296,44 @@ class TestPaperQuadratic(unittest.TestCase):
         to take a count and assert that it's equal to the length.
         """
         gs_term = 4
-        all_gs = shfl.iterate_gs(*TestPaperQuadratic.iter_args, iter_depth=gs_term,
-                        return_type=dict)
+        all_gs = shfl.iterate_gs(
+            *TestPaperQuadratic.iter_args, iter_depth=gs_term, return_type=dict
+        )
         g4 = all_gs[gs_term]
         
         number_of_matches = 0
         for i in g4:
             for j in TestPaperQuadratic.g4:
-                if i.hard_equals(j):
+                if np.array_equal(i, j):
                     number_of_matches += 1
+                    
         assert (number_of_matches == len(TestPaperQuadratic.g4))
-
 
     def test_iterate_gs1to4(self):
         """
         Included this just incase later terms are modifying the previous terms.
         """
-        all_gs = shfl.iterate_gs(*TestPaperQuadratic.iter_args, iter_depth=4,
-                        return_type=dict)
+        all_gs = shfl.iterate_gs(
+            *TestPaperQuadratic.iter_args, iter_depth=4, return_type=dict
+        )
 
         g1 = all_gs[1][0]
-        assert g1.hard_equals(TestPaperQuadratic.g1)
+        assert np.array_equal(g1, TestPaperQuadratic.g1)
         
         g2_terms = sorted(all_gs[2], key=hash)
         for g2_a, g2_b in zip(g2_terms, TestPaperQuadratic.g2):
-            assert g2_a.hard_equals(g2_b)
+            assert np.array_equal(g2_a, g2_b)
         
         g3_terms = sorted(all_gs[3], key=hash)
         for g3_a, g3_b in zip(g3_terms, TestPaperQuadratic.g3):
-            assert g3_a.hard_equals(g3_b)
+            assert np.array_equal(g3_a, g3_b)
         
         number_of_matches4 = 0
         for i in all_gs[4]:
             for j in TestPaperQuadratic.g4:
-                if i.hard_equals(j):
+                if np.array_equal(i, j):
                     number_of_matches4 += 1
         assert (number_of_matches4 == len(TestPaperQuadratic.g4))
-
 
 
 class TestPaperImp(unittest.TestCase):
@@ -333,9 +342,9 @@ class TestPaperImp(unittest.TestCase):
     Nonlinear Circuits- A Generating Power Series Approach" - M. Lamnabhi. The
     system (EQ 21) they use contains a cubic nonlinearity and two multipliers.
     The integral equation is of the form:
-        \int(i)dt + i - (1/3)*i**3 = e_s
+          int(i)dt + i - (1/3)*i**3 = e_s
     
-    This is a somewhat simple example, but it demonstrates the cubic shuffle, 
+    This is a somewhat simple example, but it demonstrates the cubic shuffle,
     and other papers only make use of one multiplier.
     """
     multipliers = [
@@ -349,7 +358,7 @@ class TestPaperImp(unittest.TestCase):
         ]),
     ]
 
-    g0 = GeneratingSeries(np.array([
+    g0 = GeneratingSeries(([
         [1, x1],
         [1,  0]
     ]))
@@ -357,72 +366,74 @@ class TestPaperImp(unittest.TestCase):
     iter_args = (g0, multipliers, 3)
     
     gs_unsorted = [
-        GeneratingSeries(np.array([
+        GeneratingSeries([
             [1, x1],
             [1,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [2, x1, x1, x1],
             [3,  2,  1,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [-2, x0, x1, x1, x1],
             [ 1,  3,  2,  1,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [40, x1, x1, x1, x1, x1],
             [ 5,  4,  3,  2,  1,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [-40, x0, x1, x1, x1, x1, x1],
             [  3,  5,  4,  3,  2,  1,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [-16, x1, x0, x1, x1, x1, x1],
             [  3,  2,  4,  3,  2,  1,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [-4, x1, x1, x0, x1, x1, x1],
             [ 3,  2,  1,  3,  2,  1,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [-40, x0, x1, x1, x1, x1, x1],
             [  1,  5,  4,  3,  2,  1,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [40, x0, x0, x1, x1, x1, x1, x1],
             [ 1,  3,  5,  4,  3,  2,  1,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [16, x0, x1, x0, x1, x1, x1, x1],
             [ 1,  3,  2,  4,  3,  2,  1,  0]
-        ])),
-        GeneratingSeries(np.array([
+        ]),
+        GeneratingSeries([
             [4, x0, x1, x1, x0, x1, x1, x1],
             [1,  3,  2,  1,  3,  2,  1,  0]
-        ]))       
+        ])
     ]
     correct_gs = sorted(gs_unsorted, key=hash)
-    
-    
+       
     def test_iterate_gs_order2(self):
-        scheme = shfl.iterate_gs(*TestPaperImp.iter_args, iter_depth=2, return_type=list)
+        scheme = shfl.iterate_gs(
+            *TestPaperImp.iter_args, iter_depth=2, return_type=list
+        )
         scheme = sorted(scheme, key=hash)
         assert (scheme == TestPaperImp.correct_gs)
         
         
-
-
 # class TestPaperCubic(unittest.TestCase):
 #     """
-#     Duffing paper. This now incorporates a y ** 3, meaning two shuffles are 
+#     Duffing paper. This now incorporates a y ** 3, meaning two shuffles are
 #     required.
 #     """
+#     a1 = 5
+#     a2 = 2
 #     g0 = [
-#         GeneratingSeries(np.array([
+#         GeneratingSeries([
 #             [  1,  x0, x1],
-#             [-a1, -a2,  0]])),
-#         ]
+#             [-a1, -a2,  0]]),
+#     ]
+    
 #     def test_g1_manual(self):
 #         print("Need to do cubic case.")
 #         assert True
@@ -461,7 +472,7 @@ class TestPaperImp(unittest.TestCase):
         
 #     def test_g1to3_iterate(self):
 #         print("Need to do cubic case.")
-#         assert True        
+#         assert True
 
         
 if __name__ == "__main__":

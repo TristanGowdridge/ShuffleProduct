@@ -20,9 +20,10 @@ class TestPartitions(unittest.TestCase):
     These are referenced against Unal's paper and Lamnabhi's thesis.
     Since order doesn't matter, all lists are sorted to make comparison easier.
     Since shfl.partitions() handles iter_depth=0, 1 as edge cases and then any
-    value greater than this is handled in the same way, we actually only have 
+    value greater than this is handled in the same way, we actually only have
     to check upto iter_depth=4, for completeness I have gone a little further.
     """
+    
     def test_iterdepth0_n2(self):
         a = shfl.partitions(0, 2)
         assert a == [(0, 0)]
@@ -49,9 +50,9 @@ class TestPartitions(unittest.TestCase):
         
     def test_iterdepth6_n2(self):
         a = sorted(shfl.partitions(6, 2))
-        assert a == sorted(
-            [(0, 6), (6, 0), (1, 5), (5, 1), (4, 2), (2, 4), (3, 3)]
-            )
+        assert a == sorted([
+            (0, 6), (6, 0), (1, 5), (5, 1), (4, 2), (2, 4), (3, 3)
+        ])
     
     def test_iterdepth0_3(self):
         a = sorted(shfl.partitions(0, 3))
@@ -65,7 +66,7 @@ class TestPartitions(unittest.TestCase):
         a = sorted(shfl.partitions(2, 3))
         assert a == sorted([
             (2, 0, 0), (0, 2, 0), (0, 0, 2), (1, 1, 0), (0, 1, 1), (1, 0, 1)
-            ])
+        ])
 
     def test_iterdepth4_3(self):
         a = sorted(shfl.partitions(3, 3))
@@ -73,7 +74,7 @@ class TestPartitions(unittest.TestCase):
             (3, 0, 0), (0, 3, 0), (0, 0, 3),
             (2, 1, 0), (2, 0, 1), (0, 2, 1), (0, 1, 2), (1, 2, 0), (1, 0, 2),
             (1, 1, 1)
-            ])
+        ])
 
     def test_sum(self):
         """
@@ -86,7 +87,6 @@ class TestPartitions(unittest.TestCase):
                 for part in parts:
                     assert sum(part) == iter_depth
                     assert len(part) == n_shuffles
-
 
 
 if __name__ == "__main__":

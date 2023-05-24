@@ -34,8 +34,8 @@ def array_to_fraction(terms):
     for term in terms:
         top_row = term[1][0].astype(dtype="O")
         bottom_row = term[1][1]
-        top_row[top_row == 0] = x0
-        top_row[top_row == 1] = Symbol("x1")
+        top_row[np.equal(top_row, 0)] = x0
+        top_row[np.equal(top_row, 1)] = Symbol("x1")
         
         # top_row[top_row == 2] = 1 # Used in imp response for term of len 1.
     
@@ -157,7 +157,7 @@ def impulse(scheme, amplitude=1):
         x0_storage = []
         for i, x_i in enumerate(term[0, :]):
             if x_i == 1:
-                if all(term[0, i:] == 1):
+                if all(np.equal(term[0, i:], 1)):
                     n = int(np.real(np.sum(term[0, :])))
                     frac = (
                         (coeff/factorial(int(n))) / (1+term[1, i]*Symbol("x0"))
@@ -176,7 +176,8 @@ def impulse(scheme, amplitude=1):
 
 
 def impulse_from_iter(
-        g0, multipliers, n_shuffles, iter_depth=2, amplitude=1):
+        g0, multipliers, n_shuffles, iter_depth=2, amplitude=1,
+        return_type=tuple):
     """
     The idea here centers around the fact that most of the term in the impulse
     response are thrown away. So when iterating the generating series, the
@@ -215,7 +216,8 @@ def impulse_from_iter(
                     next_terms.append(gs_term.prepend_multiplier(multiplier))
 
         term_storage[depth + 1] = next_terms
-        
+    
+    return shfl.handle_output_type(term_storage, return_type)
     tuple_form = shfl.handle_output_type(term_storage, tuple)
     
     return impulse(tuple_form, amplitude)
@@ -229,7 +231,7 @@ def deterministic_response(scheme, excitation):
 
       
 def matlab_partfrac(
-        scheme, filename="terms", precision=None, delete_files=True):
+        scheme, filename="terms", precision=0, delete_files=True):
     """
                         ****** VERY HACKY ******
     
@@ -249,14 +251,14 @@ def matlab_partfrac(
             f.write(str_term)
     run_str = "matlab -nosplash -nodesktop -wait -r"
     run_str += " \"addpath('../shuffleproduct/');"
-    run_str += f"partial_fractions('{filename}'); exit\""
+    run_str += f"partial_fractions('{filename}', {precision}); exit\""
     subprocess.run(run_str)
     
     x0 = Symbol("x0") # noqa. This will be eval'd.
     sum_of_partials = []
     with open(f"{filename}_MATLAB.txt") as file:
         while line := file.readline():
-            # print(line)
+
             sum_of_partials.append(eval(line.rstrip()))
     
     if delete_files:
@@ -271,9 +273,8 @@ def matlab_partfrac(
 # =============================================================================
 def get_symbol(term):
     symbol = list(term.free_symbols)
-    
     if (len(symbol) != 1):
-        raise ValueError("The should only be one symbol in the term.")
+        raise ValueError("There should only be one symbol in the term.")
 
     return symbol[0]
 

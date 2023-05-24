@@ -22,12 +22,11 @@ import responses as rsps
 t = sym.Symbol("t")
 
 
-
 x0 = 0
 x1 = 1
 
-k1=1
-k2=2
+k1 = 1
+k2 = 2
 
 multiplier = np.array([
     [-k2, x0],
