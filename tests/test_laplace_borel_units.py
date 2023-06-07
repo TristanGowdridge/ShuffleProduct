@@ -15,7 +15,7 @@ from sympy.functions.elementary.exponential import exp as sympyexp
 
 import responses as rsps
 
-x = sym.Symbol('x')
+x = sym.Symbol('x0')
 y = sym.Symbol('y')
 t = sym.Symbol('t')
 

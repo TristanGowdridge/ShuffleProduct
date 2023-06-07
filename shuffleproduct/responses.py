@@ -21,7 +21,9 @@ from sympy.functions.elementary.exponential import exp as sympyexp
 
 sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
 import shuffle as shfl
+import shufflesym as shfls
 from generating_series import GeneratingSeries
+import generating as gsym
 
 
 def array_to_fraction(terms):
@@ -175,9 +177,39 @@ def impulse(scheme, amplitude=1):
     return imp
 
 
+def impulsesym(scheme, amplitude=1):
+    """
+    Defined in "Functional Analysis of Nonlinear Circuits- a Generating Power
+    Series Approach".
+    
+    This is used if the generating series have already been expanded. For
+    efficiency use impulse_from_iter().
+    """
+    imp = []
+    for coeff, term in scheme:
+        x0_storage = []
+        for i, x_i in enumerate(term[0, :]):
+            if x_i == Symbol("x1"):
+                if all(np.equal(term[0, i:], Symbol("x1"))):
+                    n = term.shape[1] - i
+                    frac = (
+                        (coeff/factorial(int(n))) / (1+term[1, i]*Symbol("x0"))
+                    )
+                    if x0_storage:
+                        for x0_term in x0_storage:
+                            frac *= x0_term
+                    imp.append(amplitude * frac)
+                break
+            elif x_i == Symbol("x0"):
+                x0_storage.append(Symbol("x0") / (1 + term[1, i]*Symbol("x0")))
+            else:
+                raise ValueError("Unknown term in 0th row.")
+
+    return imp
+
+
 def impulse_from_iter(
-        g0, multipliers, n_shuffles, iter_depth=2, amplitude=1,
-        return_type=tuple):
+        g0, multipliers, n_shuffles, iter_depth=2, amplitude=1):
     """
     The idea here centers around the fact that most of the term in the impulse
     response are thrown away. So when iterating the generating series, the
@@ -217,10 +249,52 @@ def impulse_from_iter(
 
         term_storage[depth + 1] = next_terms
     
-    return shfl.handle_output_type(term_storage, return_type)
     tuple_form = shfl.handle_output_type(term_storage, tuple)
     
     return impulse(tuple_form, amplitude)
+
+
+def impulse_from_itersym(
+        g0, multipliers, n_shuffles, iter_depth=2, amplitude=1):
+    """
+    The idea here centers around the fact that most of the term in the impulse
+    response are thrown away. So when iterating the generating series, the
+    terms that will definitely not result in any terms later on can be thrown
+    away early, therefore we no longer have to expand these terms, this results
+    in a efficiency gains when comparing to expanding the generating series
+    and then applying the impulse response.
+    """
+    multipliers = shfls.wrap_term(multipliers, gsym.GeneratingSeries)
+    g0 = shfls.wrap_term(g0, gsym.GeneratingSeries)
+    
+    term_storage = defaultdict(list)
+    term_storage[0].extend(g0)
+    
+    for depth in range(iter_depth):
+        for part in shfls.partitions(depth, n_shuffles):
+            # Cartesian product of all the inputs, instead of nested for-loop.
+            terms = itemgetter(*part)(term_storage)
+            for in_perm in product(*terms):
+                term_storage[depth + 1].extend(shfls.nShuffles(*in_perm))
+            term_storage[depth + 1] = shfls.collect(term_storage[depth + 1])
+            
+        # After the shuffles for this iteration's depth have been caluclated,
+        # prepend the multiplier to each term.
+        for gs_term in term_storage[depth + 1]:
+            been_1 = False
+            for x in gs_term.words:
+                if x in (1, Symbol("x1")):
+                    been_1 = True
+                
+                elif been_1 and x in (0, Symbol("x0")):
+                    break
+            else:
+                for multiplier in multipliers:
+                    gs_term.prepend_multiplier(multiplier)
+    
+    tuple_form = shfls.handle_output_type(term_storage, tuple)
+    
+    return impulsesym(tuple_form, amplitude)
   
   
 def deterministic_response(scheme, excitation):
@@ -254,7 +328,10 @@ def matlab_partfrac(
     run_str += f"partial_fractions('{filename}', {precision}); exit\""
     subprocess.run(run_str)
     
-    x0 = Symbol("x0") # noqa. This will be eval'd.
+    x0, x1, a1, a2, k1, k2, k3, a, b, b1, b2, A = sym.symbols(
+        "x0 x1 a1 a2 k1 k2 k3 a b b1 b2 A"
+    )
+    
     sum_of_partials = []
     with open(f"{filename}_MATLAB.txt") as file:
         while line := file.readline():
@@ -271,12 +348,12 @@ def matlab_partfrac(
 # =============================================================================
 # Converting to the time domain.
 # =============================================================================
-def get_symbol(term):
-    symbol = list(term.free_symbols)
-    if (len(symbol) != 1):
-        raise ValueError("There should only be one symbol in the term.")
+# def get_symbol(term):
+#     symbol = list(term.free_symbols)
+#     if (len(symbol) != 1):
+#         raise ValueError("There should only be one symbol in the term.")
 
-    return symbol[0]
+#     return symbol[0]
 
 
 def convert_term(term):
@@ -346,7 +423,7 @@ def is_polynomial_form(term):
     if is_unit_form(term):
         return False
     
-    x0 = get_symbol(term)
+    x0 = Symbol("x0")
     a = Wild("a", exclude=[x0, 0])
     n = Wild("n")
         
@@ -364,7 +441,7 @@ def lb_polynomial(term):
     """
     a * x ** n
     """
-    x0 = get_symbol(term)
+    x0 = Symbol("x0")
     a = Wild("a", exclude=[x0, 0])
     n = Wild("n", exclude=[0])
         
@@ -386,7 +463,7 @@ def is_exponential_form(term):
     if is_unit_form(term):
         return False
     
-    x0 = get_symbol(term)
+    x0 = Symbol("x0")
 
     b = Wild("b", exclude=[x0])
     c = Wild("c", exclude=[x0])
@@ -395,7 +472,7 @@ def is_exponential_form(term):
         
     a, denom = term.as_numer_denom()
     
-    if a.free_symbols:
+    if x0 in a.free_symbols:
         return False
     
     denom_form = b * (c + d*x0) ** n
@@ -412,7 +489,7 @@ def lb_exponential(term):
     """
     a / b * (c + d*x0) ** -n
     """
-    x0 = get_symbol(term)
+    x0 = Symbol("x0")
 
     b = Wild("b", exclude=[x0])
     c = Wild("c", exclude=[x0])
@@ -420,7 +497,7 @@ def lb_exponential(term):
     n = Wild("n")
     
     a, denom = term.as_numer_denom()
-    # print(f"a is {a}")
+
     denom_form = b * (c + d*x0) ** n
     match = denom.match(denom_form)
 
@@ -433,9 +510,6 @@ def lb_exponential(term):
     
     coeff1 = a / (b * c ** n)
     coeff2 = d / c
-    # print(coeff2)
-    # if coeff2 > 0:
-    #     print(f"coeff2 is positive {term}")
 
     ts = 0
     for i in range(n):
@@ -452,7 +526,7 @@ def is_cosine_form(term):
     if is_unit_form(term):
         return False
     
-    x0 = get_symbol(term)
+    x0 = Symbol("x0")
     a = Wild("a", exclude=[x0, 0])
     b = Wild("b", exclude=[x0, 0])
     c = Wild("c", exclude=[x0, 0])
@@ -473,7 +547,7 @@ def lb_cosine(term):
     """
     a * (b + c*x**2) ** -1
     """
-    x0 = get_symbol(term)
+    x0 = Symbol("x0")
     a = Wild("a", exclude=[x0, 0])
     b = Wild("b", exclude=[x0, 0])
     c = Wild("c", exclude=[x0, 0])

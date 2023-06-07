@@ -41,18 +41,18 @@ imp = rsps.impulse_from_iter(
 import time
 t0 = time.time()
 imp_pf = rsps.matlab_partfrac(imp)
-print(time.time()-t0)
+# print(time.time()-t0)
 
-imp_time_domain = rsps.inverse_lb(imp_pf)
-imp_func = rsps.time_function(imp_time_domain)
-
-
-t = Symbol("t")
-time_vec = np.linspace(0, 3, 1000)
-y_imp = imp_func(time_vec)
+# imp_time_domain = rsps.inverse_lb(imp_pf)
+# imp_func = rsps.time_function(imp_time_domain)
 
 
-fig1 = plt.figure()
-ax1 = fig1.gca()
-fig1.suptitle("Impulse")
-ax1.plot(time_vec, y_imp)
+# t = Symbol("t")
+# time_vec = np.linspace(0, 3, 1000)
+# y_imp = imp_func(time_vec)
+
+
+# fig1 = plt.figure()
+# ax1 = fig1.gca()
+# fig1.suptitle("Impulse")
+# ax1.plot(time_vec, y_imp)

@@ -4,6 +4,10 @@ Created on Fri May 12 07:57:47 2023
 
 @author: trist
 
+to do:
+    * Split the numpy array into coeff, numerator and coefficients. This will
+    make the data types easier to handle. Something like
+    zip(arr[0, 1:], arr[1, :-1]) would do the trick.
 """
 
 import numpy as np

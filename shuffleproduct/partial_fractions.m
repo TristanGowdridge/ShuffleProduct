@@ -1,5 +1,5 @@
 function f = partial_fractions(filename, precision)
-syms x0 % This will be used in the evals.
+syms x0 a1 a2 a b k1 k2 k3 A %  These will be used in the evals.
 
 PARALLEL_CUT_IN = 20;
 
@@ -23,7 +23,7 @@ if (n < PARALLEL_CUT_IN) % If less than don't use parallel.
     while ~feof(fid)
         term = eval(fgetl(fid));
         if isa(term, 'sym')
-            term = partfrac(term);
+            term = partfrac(term, x0);
         end
         if precision
             term = vpa(term, precision);
@@ -51,7 +51,7 @@ else % Parallel.
     parfor i =1:n
         term = line_list{i};
         if isa(term, 'sym')
-            term = partfrac(term);
+            term = partfrac(term, x0);
         end
         if precision
             term = vpa(term, precision);

@@ -4,6 +4,10 @@ Created on Thu May 11 17:10:37 2023
 
 @author: trist
 
+
+To Do:
+    * Collect 001, 010, 100 -> 3 * 001. Caching and sorting probably do this
+    anyway?
 """
 import functools
 import copy
@@ -66,7 +70,7 @@ def reduction_term(g1, g2):
 
 def add_to_stack(grid_sec, count, new_term, current_stack):
     """
-    appends the term to the stack and places it in the  calls the function to
+    appends the term to the stack and places it in then calls the function to
     collect the grid
     """
     grid_sec.append(
@@ -147,26 +151,28 @@ def binary_shuffle(gs1, gs2):
                 gs2_reduct = reduction_term(g2, end1.reshape(-1))
             
             current = grid[i2][i1]
-            if current:
-                for count, curr in collect_grid(current):
-                    if is_reducible1 and is_reducible2:
-                        add_to_stack(grid[i2][i1+1], count, gs1_reduct, curr)
-                        # grid[i2][i1+1] = collect_grid(grid[i2][i1+1])
-                        add_to_stack(grid[i2+1][i1], count, gs2_reduct, curr)
-                        # grid[i2+1][i1] = collect_grid(grid[i2+1][i1])
+            
+            if not current:
+                # Special case for first loop pass.
+                grid[0][1].append((1, gs1_reduct))
+                grid[1][0].append((1, gs2_reduct))
+                continue
                 
-                    elif is_reducible1 and not is_reducible2:
-                        add_to_stack(grid[i2][i1+1], count, gs1_reduct, curr)
-                        # grid[i2][i1+1] = collect_grid(grid[i2][i1+1])
-                    
-                    elif not is_reducible1 and is_reducible2:
-                        add_to_stack(grid[i2+1][i1], count, gs2_reduct, curr)
-                        grid[i2+1][i1] = collect_grid(grid[i2+1][i1])
+            for count, curr in collect_grid(current):
+                if is_reducible1 and is_reducible2:
+                    add_to_stack(grid[i2][i1+1], count, gs1_reduct, curr)
+                    # grid[i2][i1+1] = collect_grid(grid[i2][i1+1])
+                    add_to_stack(grid[i2+1][i1], count, gs2_reduct, curr)
+                    # grid[i2+1][i1] = collect_grid(grid[i2+1][i1])
+            
+                elif is_reducible1 and not is_reducible2:
+                    add_to_stack(grid[i2][i1+1], count, gs1_reduct, curr)
+                    # grid[i2][i1+1] = collect_grid(grid[i2][i1+1])
+                
+                elif not is_reducible1 and is_reducible2:
+                    add_to_stack(grid[i2+1][i1], count, gs2_reduct, curr)
+                    grid[i2+1][i1] = collect_grid(grid[i2+1][i1])
 
-            else:
-                grid[i2][i1+1].append((1, gs1_reduct))
-                grid[i1+1][i2].append((1, gs2_reduct))
-    
     to_return = []
     for count, term in grid[-1][-1]:
         temp_term = np.hstack([end, term])
@@ -286,7 +292,6 @@ def iter_gs_worker(part, term_storage, depth):
     # thing but avoids unnecessary nesting.
     for in_perm in product(*terms):
         term_storage[depth + 1].extend(nShuffles(*in_perm))
-    term_storage[depth + 1] = collect(term_storage[depth + 1])
     
 
 def iterate_gs(
@@ -315,6 +320,8 @@ def iterate_gs(
     for depth in range(iter_depth):
         for part in partitions(depth, n_shuffles):
             iter_gs_worker(part, term_storage, depth)
+        term_storage[depth + 1] = collect(term_storage[depth + 1])
+        
         # After the shuffles for this iteration's depth have been caluclated,
         # prepend the multiplier to each term.
         next_terms = []
@@ -406,13 +413,16 @@ def handle_output_type(term_storage, return_type):
 
 def sdof_roots(m, c, k):
     """
+    Values are passed in their usual orders, however the quadratic coefficient
+    is k, therefore need to reverse the order when passed into np.roots.
+    
     As a result of floating point precision, when the determinant == 0, some
     complex artefacts can be introduced, in this case, I take the real part of
     the roots.
     """
-    det = c**2 - 2*m*k
-    
-    roots = np.roots([m, c, k])
+    det = c**2 - 4*k*m
+    print("WRONG WAY ROUND")
+    roots = np.roots([m, c, k])  # Reversed as quadratic is kx^2 + cx + m.
     if det == 0:
         roots = np.real(roots)
     
@@ -441,5 +451,5 @@ if __name__ == "__main__":
     from time import perf_counter
     iter_args = (g0, multiplier, 2)
     t0 = perf_counter()
-    scheme = iterate_gs(*iter_args, iter_depth=5)
+    scheme = iterate_gs(*iter_args, iter_depth=7)
     print(perf_counter()-t0)
