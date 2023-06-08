@@ -15,13 +15,7 @@ import shuffle as shfl
 import responses as rsps
 from generating_series import GeneratingSeries
 
-# from params import m, c, k1, k2, k3, A
-m = 1
-c = 20
-k1 = 1e4
-k2 = 1e7
-k3 = 5e9
-A = 0.03
+from params import m, c, k1, k2, k3, A, t, plot
 
 x0 = 0
 x1 = 1
@@ -103,16 +97,14 @@ def convert_gs_to_time(terms):
 
 scheme = iterate_quad_cubic(2)
 
-y1 = convert_gs_to_time(scheme[0])
-y2 = convert_gs_to_time(scheme[1])
-y3 = convert_gs_to_time(scheme[2])
+y1 = convert_gs_to_time(scheme[0])(t)
+y2 = convert_gs_to_time(scheme[1])(t)
+y3 = convert_gs_to_time(scheme[2])(t)
 
-t = np.linspace(0, 1, 1000)
-
-
-fig = plt.figure()
-ax = fig.gca()
-ax.plot(t, y1(t), label="y1")
-ax.plot(t, y1(t)+y2(t), label="y1 + y2")
-ax.plot(t, y1(t)+y2(t)+y3(t), label="y1 + y2 + y3")
-ax.legend()
+np.save("y1_num_quad_cube.npy", y1)
+np.save("y2_num_quad_cube.npy", y2)
+np.save("y3_num_quad_cube.npy", y3)
+    
+figax = plot(y1, None, "$y^g_1$")
+figax = plot(y1 + y2, figax, "$y^g_1 + y^g_2$")
+figax = plot(y1 + y2 + y3, figax, "$y^g_1 + y^g_2 + y^g_3$")

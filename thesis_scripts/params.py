@@ -32,7 +32,7 @@ k1 = 1e4
 k2 = 1e7
 k3 = 5e9
 
-A = 0.14
+A = 0.07
 
 dr = c / (2 * np.sqrt(m * k1))
 wn = np.sqrt(k1 / m)

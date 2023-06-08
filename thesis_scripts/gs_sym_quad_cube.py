@@ -11,7 +11,7 @@ from operator import itemgetter
 from itertools import product
 
 import numpy as np
-from sympy import symbols, lambdify, Add, apart
+from sympy import symbols, lambdify
 
 from params import A, m, c, k1, k2, k3, plot, t
 
@@ -135,9 +135,9 @@ y11 = lambdify(symbols('t'), y1.subs(vals))(t)
 y21 = lambdify(symbols('t'), y2.subs(vals))(t)
 y31 = lambdify(symbols('t'), y3.subs(vals))(t)
 
-np.save("y11.npy", y11)
-np.save("y21.npy", y21)
-np.save("y31.npy", y31)
+np.save("y1_sym_quad_cube.npy", y11)
+np.save("y2_sym_quad_cube.npy", y21)
+np.save("y3_sym_quad_cube.npy", y31)
     
 figax = plot(y11, None, "$y^g_1$")
 figax = plot(y11 + y21, figax, "$y^g_1 + y^g_2$")

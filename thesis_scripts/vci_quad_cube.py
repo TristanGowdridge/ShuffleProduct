@@ -74,7 +74,6 @@ y3 = y3_k2 + y3_k3
 
 if __name__ == "__main__":
     # Plot the results
-    plot(y3_k2)
     figax = plot(y1, None, "y1")
     figax = plot(y1+y2, figax, "y1+y2")
     figax = plot(y1+y2+y3, figax, "y1+y2+y3")

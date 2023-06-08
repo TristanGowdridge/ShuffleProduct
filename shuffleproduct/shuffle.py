@@ -8,6 +8,8 @@ Created on Thu May 11 17:10:37 2023
 To Do:
     * Collect 001, 010, 100 -> 3 * 001. Caching and sorting probably do this
     anyway?
+    
+    * for impulse dont consider terms in the shuffle above the iteration depth.
 """
 import functools
 import copy

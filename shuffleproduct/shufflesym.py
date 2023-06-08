@@ -286,8 +286,8 @@ def partitions(iter_depth: int, number_of_shuffles: int) -> Tuple[int]:
 #     for index in product(*[range(gs_len+1) for gs_len in gs_lens]):
 #         index = np.array(index)
 #         is_reducible = index < gs_lens
-
-
+        
+        
 def iter_gs_worker(part, term_storage, depth):
     """
     This is the CPU-intensive section the generating series expansion.
