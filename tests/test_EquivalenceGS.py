@@ -11,7 +11,7 @@ import unittest
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
-from generating_series import GeneratingSeries
+from generating_series import GeneratingSeriesNum as GS
 from shuffle import binary_shuffle
 import shuffle as shfl
 
@@ -42,22 +42,22 @@ class TestPaperQuadratic(unittest.TestCase):
         [ a,  0]
     ])
     
-    g0 = GeneratingSeries([
+    g0 = GS([
         [ 1, x1],
         [ a,  0]
     ])
     
-    g1 = GeneratingSeries([
+    g1 = GS([
         [-2*b,   x0,   x1,  x1],
         [   a,  2*a,    a,   0]
     ])
     
     g2 = [
-        GeneratingSeries([
+        GS([
             [4*b**2,  x0, x1,  x0, x1, x1],
             [     a, 2*a,  a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [12*b**2, x0,  x0,  x1,  x1, x1],
             [     a, 2*a, 3*a, 2*a,   a,  0]
         ])
@@ -65,23 +65,23 @@ class TestPaperQuadratic(unittest.TestCase):
     g2 = sorted(g2, key=hash)
     
     g3 = [
-        GeneratingSeries([
+        GS([
             [  -8*b**3,  x0, x1,  x0, x1,  x0, x1, x1],
             [        a, 2*a,  a, 2*a,  a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [ -24*b**3,  x0,  x0,  x1, x1, x0, x1, x1],
             [        a, 2*a, 3*a, 2*a,  a, 2*a, a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [ -72*b**3, x0,   x0,  x1,  x0,  x1, x1, x1],
             [        a, 2*a, 3*a, 2*a, 3*a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [ -24*b**3,  x0, x1,  x0,  x0,  x1, x1, x1],
             [        a, 2*a,  a, 2*a, 3*a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [-144*b**3,  x0,  x0,  x0,  x1,  x1, x1, x1],
             [        a, 2*a, 3*a, 4*a, 3*a, 2*a,  a,  0]
         ])
@@ -89,43 +89,43 @@ class TestPaperQuadratic(unittest.TestCase):
     g3 = sorted(g3, key=hash)
     
     g4 = [
-        GeneratingSeries([
+        GS([
             [  48*b**4,  x0,  x0,  x1, x1,  x0, x1,  x0, x1, x1],
             [        a, 2*a, 3*a, 2*a,  a, 2*a,  a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [ 144*b**4,  x0,  x0,  x1,  x0,  x1, x1,  x0, x1, x1],
             [        a, 2*a, 3*a, 2*a, 3*a, 2*a,  a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [ 432*b**4,  x0,  x0,  x1,  x0,  x1,  x0,  x1, x1, x1],
             [        a, 2*a, 3*a, 2*a, 3*a, 2*a, 3*a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [ 288*b**4,  x0,  x0,  x0,  x1,  x1, x1,  x0, x1, x1],
             [        a, 2*a, 3*a, 4*a, 3*a, 2*a,  a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [ 864*b**4,  x0,  x0,  x0,  x1,  x1,  x0,  x1, x1, x1],
             [        a, 2*a, 3*a, 4*a, 3*a, 2*a, 3*a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [1728*b**4,  x0,  x0,  x0,  x1,  x0,  x1,  x1, x1, x1],
             [        a, 2*a, 3*a, 4*a, 3*a, 4*a, 3*a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [864*b**4,  x0,  x0,  x1,  x0,  x0,  x1,  x1, x1, x1],
             [       a, 2*a, 3*a, 2*a, 3*a, 4*a, 3*a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [144*b**4,  x0,  x0,  x1, x1,  x0,  x0,  x1, x1, x1],
             [       a, 2*a, 3*a, 2*a,  a, 2*a, 3*a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [2880*b**4,  x0,  x0,  x0,  x0,  x1,  x1,  x1, x1, x1],
             [        a, 2*a, 3*a, 4*a, 5*a, 4*a, 3*a, 2*a,  a,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [16*b**4,  x0, x1,  x0, x1,  x0, x1,  x0, x1, x1],
             [      a, 2*a,  a, 2*a,  a, 2*a,  a, 2*a,  a,  0]
         ])
@@ -163,7 +163,7 @@ class TestPaperQuadratic(unittest.TestCase):
         
         assert (len(g2) == 4)
         
-        g2 = shfl.collect(g2)
+        g2 = g1[0].collect(g2)
         
         assert (len(g2) == 2)
         
@@ -192,7 +192,7 @@ class TestPaperQuadratic(unittest.TestCase):
         for g1_term in g1_terms:
             g2.extend(binary_shuffle(g1_term, TestPaperQuadratic.g0))
             g2.extend(binary_shuffle(TestPaperQuadratic.g0, g1_term))
-        g2 = shfl.collect(g2)
+        g2 = g1[0].collect(g2)
         
         g2_terms = []
         for g2_term in g2:
@@ -210,7 +210,7 @@ class TestPaperQuadratic(unittest.TestCase):
             g3.extend(binary_shuffle(g2_term, TestPaperQuadratic.g0))
             g3.extend(binary_shuffle(TestPaperQuadratic.g0, g2_term))
         g3.extend(binary_shuffle(g1_terms[0], g1_terms[0]))
-        g3 = shfl.collect(g3)
+        g3 = g1[0].collect(g3)
 
         g3_terms = []
         for g3_term in g3:
@@ -244,7 +244,7 @@ class TestPaperQuadratic(unittest.TestCase):
         for gs_term in g1_terms:
             g2.extend(shfl.nShuffles(gs_term, TestPaperQuadratic.g0))
             g2.extend(shfl.nShuffles(TestPaperQuadratic.g0, gs_term))
-        g2 = shfl.collect(g2)
+        g2 = g1[0].collect(g2)
         
         assert (len(g2) == 2)
         
@@ -358,7 +358,7 @@ class TestPaperImp(unittest.TestCase):
         ]),
     ]
 
-    g0 = GeneratingSeries(([
+    g0 = GS(([
         [1, x1],
         [1,  0]
     ]))
@@ -366,47 +366,47 @@ class TestPaperImp(unittest.TestCase):
     iter_args = (g0, multipliers, 3)
     
     gs_unsorted = [
-        GeneratingSeries([
+        GS([
             [1, x1],
             [1,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [2, x1, x1, x1],
             [3,  2,  1,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [-2, x0, x1, x1, x1],
             [ 1,  3,  2,  1,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [40, x1, x1, x1, x1, x1],
             [ 5,  4,  3,  2,  1,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [-40, x0, x1, x1, x1, x1, x1],
             [  3,  5,  4,  3,  2,  1,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [-16, x1, x0, x1, x1, x1, x1],
             [  3,  2,  4,  3,  2,  1,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [-4, x1, x1, x0, x1, x1, x1],
             [ 3,  2,  1,  3,  2,  1,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [-40, x0, x1, x1, x1, x1, x1],
             [  1,  5,  4,  3,  2,  1,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [40, x0, x0, x1, x1, x1, x1, x1],
             [ 1,  3,  5,  4,  3,  2,  1,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [16, x0, x1, x0, x1, x1, x1, x1],
             [ 1,  3,  2,  4,  3,  2,  1,  0]
         ]),
-        GeneratingSeries([
+        GS([
             [4, x0, x1, x1, x0, x1, x1, x1],
             [1,  3,  2,  1,  3,  2,  1,  0]
         ])

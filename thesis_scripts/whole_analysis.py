@@ -10,13 +10,10 @@ import sys
 from collections import defaultdict
 from operator import itemgetter
 from itertools import product
-from math import prod
-import subprocess 
+import subprocess
 
 import numpy as np
 from sympy import symbols, lambdify, factorial
-from sympy.printing import latex
-import matplotlib.pyplot as plt
 
 from params import A, m, c, k1, k2, k3, plot, t
 from vci_quad_cube import y1 as y1_volt
@@ -26,22 +23,21 @@ from vci_quad_cube import y3 as y3_volt
 sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
 import shufflesym as shfl
 import responses as rsps
-from generating import GeneratingSeries
+from generating_series import GeneratingSeriesSym as GS
 
 
 _k2, _k3, _x0, _x1, _a1, _a2, _A = symbols("k2 k3 x0 x1 a1 a2 A")
 
-_g0 = GeneratingSeries([
+_g0 = GS([
     [  1, _x0, _x1],
     [_a1, _a2,   0]
 ])
 
-
-_mult_quad = GeneratingSeries([
+_mult_quad = GS([
     [-_k2, _x0, _x0],
     [ _a1, _a2,   0]
 ])
-_mult_cube = GeneratingSeries([
+_mult_cube = GS([
     [-_k3, _x0, _x0],
     [ _a1, _a2,  0]
 ])
@@ -119,15 +115,15 @@ def impulsehere(terms, A, iter_depth):
                 if all(np.equal(term[0, i:], x1_sym)):
                     n = term.shape[1] - i
                     frac = (
-                        (coeff / factorial(int(n))) / (1-term[1, i] * x0_sym)
+                        (coeff / factorial(int(n))) / (1 + term[1, i]*x0_sym)
                     )
                     if x0_storage:
                         for x0_term in x0_storage:
                             frac *= x0_term
-                    imp[n].append((-A)**n * frac)
+                    imp[n].append(A**n * frac)
                 break
             elif x_i == x0_sym:
-                x0_storage.append(x0_sym / (1 - term[1, i] * x0_sym))
+                x0_storage.append(x0_sym / (1 + term[1, i]*x0_sym))
             else:
                 raise ValueError("Unknown term in 0th row.")
 
@@ -183,7 +179,7 @@ def convert_gs_to_time(terms, amp, iter_depth):
     return y
 
 
-iter_depth = 3
+iter_depth = 2
 scheme = iterate_quad_cubic(iter_depth)
 
 y_gs = convert_gs_to_time(scheme, _A, iter_depth)
@@ -192,8 +188,8 @@ a1, a2 = shfl.sdof_roots(m, c, k1)
 
 vals = {
     _A: A,
-    _a1: a1,
-    _a2: a2,
+    _a1: -a1,
+    _a2: -a2,
     _k2: k2,
     _k3: k3,
 }
@@ -201,18 +197,18 @@ vals = {
 y1_g = lambdify(symbols('t'), y_gs[0].subs(vals))(t)
 y2_g = lambdify(symbols('t'), y_gs[1].subs(vals))(t)
 y3_g = lambdify(symbols('t'), y_gs[2].subs(vals))(t)
-y4_g = lambdify(symbols('t'), y_gs[3].subs(vals))(t)
+# y4_g = lambdify(symbols('t'), y_gs[3].subs(vals))(t)
 
 _figax = plot(y1_volt, None, "$y_1^v$")
-# _figax = plot(y2_volt, _figax, "$y_2^v$")
-# _figax = plot(y3_volt, _figax, "$y_3^v$")
+_figax = plot(y2_volt, _figax, "$y_2^v$")
+_figax = plot(y3_volt, _figax, "$y_3^v$")
 
-# _figax = plot(y1_g, _figax, "$y^g_1$", linestyle="--")
-# _figax = plot(y2_g, _figax, "$y^g_2$", linestyle="--")
-# _figax = plot(y3_g, _figax, "$y^g_3$", linestyle="--")
+_figax = plot(y1_g, _figax, "$y^g_1$", linestyle="--")
+_figax = plot(y2_g, _figax, "$y^g_2$", linestyle="--")
+_figax = plot(y3_g, _figax, "$y^g_3$", linestyle="--")
 # _figax = plot(y4_g, _figax, "$y^g_4$", linestyle="--")
-_figax = plot(y1_g + y2_g + y3_g, _figax, "$y gen 3$", linestyle="--")
-_figax = plot(y1_g + y2_g + y3_g + y4_g, _figax, "$y gen 4$", linestyle="--")
+# _figax = plot(y1_g + y2_g + y3_g, _figax, "$y gen 3$", linestyle="--")
+# _figax = plot(y1_g + y2_g + y3_g + y4_g, _figax, "$y gen 4$", linestyle="--")
 
 _fig, _ax = _figax
 _ax.set_title(

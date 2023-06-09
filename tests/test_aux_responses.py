@@ -50,7 +50,7 @@ class TestArray2Fraction(unittest.TestCase):
         gs_f +=   4*(1+  x0)**-1 *x0* (1+3*x0)**-1 *x1* (1+2*x0)**-1 *x1* (1+  x0)**-1 *x0* (1+3*x0)**-1 *x1* (1+2*x0)**-1 *x1* (1+  x0)**-1 *x1
         gs_f = gs_f.make_args(gs_f)
         
-        sort_key = lambda x: x.subs({x0: 1, x1: 2})
+        sort_key = lambda x: abs(x.subs({x0: 1, x1: 2}))
         gs_f = sorted(gs_f, key=sort_key)
         
         # Handling the array form.

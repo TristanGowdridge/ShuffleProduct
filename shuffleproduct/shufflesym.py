@@ -18,7 +18,8 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
-from generating import GeneratingSeries
+from generating_series import GeneratingSeriesSym as GeneratingSeries
+# from generating_series import GeneratingSeriesNum as GeneratingSeries
 
 
 def shuffle_cacher(func):
@@ -106,8 +107,9 @@ def binary_shuffle(gs1, gs2):
     
     Dont store whole grid, only a selection is required.
     """
-    gs1_len, gs2_len = len(gs1), len(gs2)
-    
+    end1, gs1, gs1_len = GeneratingSeries.get_end(gs1)
+    end2, gs2, gs2_len = GeneratingSeries.get_end(gs2)
+
     grid = defaultdict(list)
     
     for i1 in range(gs1_len+1):
@@ -125,10 +127,10 @@ def binary_shuffle(gs1, gs2):
                 gs2_reduct = reduction_term(g2, g1)
             
             elif is_reducible1 and not is_reducible2:
-                gs1_reduct = reduction_term(g1, (None, gs2.dens[0]))
+                gs1_reduct = reduction_term(g1, end1)
                 
             elif not is_reducible1 and is_reducible2:
-                gs2_reduct = reduction_term(g2, (None, gs1.dens[0]))
+                gs2_reduct = reduction_term(g2, end2)
             
             current = grid[(i2, i1)]
             if not current:
@@ -381,10 +383,8 @@ def sdof_roots(m, c, k):
     roots = np.roots([m, c, k])  # Reversed as quadratic is kx^2 + cx + m.
     if det == 0:
         roots = np.real(roots)
-    
-    a1, a2 = roots
         
-    return -a1, -a2
+    return roots
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ from sympy.functions.elementary.exponential import exp as sympyexp
 sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
 import shuffle as shfl
 import shufflesym as shfls
-from generating_series import GeneratingSeries
+from generating_series import GeneratingSeriesSym as GS
 import generating as gsym
 
 
@@ -42,7 +42,7 @@ def array_to_fraction(terms):
         # top_row[top_row == 2] = 1 # Used in imp response for term of len 1.
     
         numerator = prod(top_row)
-        denominator = prod([(1 - i*x0) for i in bottom_row])
+        denominator = prod([(1 + i*x0) for i in bottom_row])
         
         output_list.append(term[0] * numerator / denominator)
     
@@ -162,15 +162,15 @@ def impulse(scheme, amplitude=1):
                 if all(np.equal(term[0, i:], 1)):
                     n = int(np.real(np.sum(term[0, :])))
                     frac = (
-                        (coeff/factorial(int(n))) / (1-term[1, i]*Symbol("x0"))
+                        coeff/factorial(int(n)) / (1 + term[1, i]*Symbol("x0"))
                     )
                     if x0_storage:
                         for x0_term in x0_storage:
                             frac *= x0_term
-                    imp.append(amplitude * frac)
+                    imp.append(amplitude**n * frac)
                 break
             elif x_i == 0:
-                x0_storage.append(Symbol("x0") / (1 - term[1, i]*Symbol("x0")))
+                x0_storage.append(Symbol("x0") / (1 + term[1, i]*Symbol("x0")))
             else:
                 raise ValueError("Unknown term in 0th row.")
 
@@ -193,7 +193,7 @@ def impulsesym(scheme, amplitude=1):
                 if all(np.equal(term[0, i:], Symbol("x1"))):
                     n = term.shape[1] - i
                     frac = (
-                        (coeff/factorial(int(n)))/ (1-term[1, i]*Symbol("x0"))
+                        (coeff/factorial(int(n))) / (1-term[1, i]*Symbol("x0"))
                     )
                     if x0_storage:
                         for x0_term in x0_storage:
@@ -219,7 +219,7 @@ def impulse_from_iter(
     and then applying the impulse response.
     """
     multipliers = shfl.wrap_term(multipliers, np.ndarray)
-    g0 = shfl.wrap_term(g0, GeneratingSeries)
+    g0 = shfl.wrap_term(g0, GS)
     
     term_storage = defaultdict(list)
     term_storage[0].extend(g0)
@@ -503,7 +503,7 @@ def lb_exponential(term):
 
     b = match[b]
     c = match[c]
-    d = match[d]
+    d = -match[d]
     n = match[n]
     
     t = Symbol("t")

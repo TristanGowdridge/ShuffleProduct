@@ -48,7 +48,7 @@ class TestImpulse(unittest.TestCase):
     
     # Sort the terms so they can reliably equated.
     def sort_key(x):
-        return (x.subs({x0_s: 1}), x.subs({x0_s: 2}))
+        return (abs(x.subs({x0_s: 1})), abs(x.subs({x0_s: 2})))
     
     imp_frac = sorted(imp_frac, key=sort_key)
 
@@ -65,13 +65,20 @@ class TestImpulse(unittest.TestCase):
         correct_gs = shfl.handle_output_type(
             {0: correct_gs}, return_type=tuple
         )
-
+        global imp_rep
         imp_rep = rsps.impulse(correct_gs)
         imp_rep = sorted(imp_rep, key=TestImpulse.sort_key)
         
         for actual, mine in zip(TestImpulse.imp_frac, imp_rep):
-            assert actual.equals(mine)
-    
+            try:
+                assert actual.equals(mine)
+            except AssertionError:
+                print(actual)
+                print(mine)
+                print()
+            
+                raise AssertionError
+            
     def test_from_first_principles(self):
         """
         This is testing from the system equation, therefore the iterative
