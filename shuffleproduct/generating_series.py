@@ -13,6 +13,7 @@ import abc
 import copy
 from collections import deque, defaultdict
 import numpy as np
+from sympy import symbols
 
 
 class GeneratingSeries:
@@ -52,13 +53,17 @@ class GeneratingSeries:
         """
         return self.instance.__class__
     
-    def shuffle_cacher(self):
-        """
-        Since wrappers are instatiated upon import, and the type of generating
-        series isn't decided then, need to define a pass through shuffle cacher
-        method.
-        """
-        return self.instance.shuffle_cacher()
+    # def shuffle_cacher(self):
+    #     """
+    #     Since wrappers are instatiated upon import, and the type of generating
+    #     series isn't decided then, need to define a pass through shuffle cacher
+    #     method.
+    #     """
+    #     return self.instance.shuffle_cacher()
+    
+    @property
+    def n_excites(self):
+        return self.instance.n_excites
     
     def __getattr__(self, name):
         return self.instance.__getattribute__(name)
@@ -93,10 +98,10 @@ class GS_Base(abc.ABC):
     Base class to ensure that the two types have the same methods and
     attributes.
     """
-    # @property
-    # @abc.abstractmethod
-    # def n_excites(self):
-    #     pass
+    @property
+    @abc.abstractmethod
+    def n_excites(self):
+        pass
     
     @abc.abstractmethod
     def prepend_multiplier():
@@ -138,6 +143,18 @@ class GS_Base(abc.ABC):
     def collect_grid():
         pass
     
+    @abc.abstractmethod
+    def to_array():
+        pass
+    
+    @abc.abstractmethod
+    def get_words():
+        pass
+    
+    @abc.abstractmethod
+    def get_numer():
+        pass
+    
     
 class GeneratingSeriesNum(np.ndarray, GS_Base):
     """
@@ -177,6 +194,19 @@ class GeneratingSeriesNum(np.ndarray, GS_Base):
     
     def get_coeff(self):
         return self[0, 0]
+    
+    def scale_coeff(self, scale):
+        self[0, 0] *= scale
+        
+    def get_words(self):
+        return 0, 1
+    
+    def get_numer(self):
+        return self[0, 1:]
+    
+    @property
+    def n_excites(self):
+        return np.sum(self[0, 1:])
     
     def prepend_multiplier(self, multiplier):
         """
@@ -223,13 +253,18 @@ class GeneratingSeriesNum(np.ndarray, GS_Base):
     def first_term(self, gs_reduct):
         return (1, gs_reduct)
     
-    def reduction_term(self, g1, g2):
+    def reduction_term(self, g_reduce, *g_others):
         """
         Gets the term to append to the stack when reducing g1.
         """
+    
+        den_reduction = g_reduce[1]
+        for g_other in g_others:
+            den_reduction += g_other[1]
+        
         reduction = np.array([
-            [g1[0]       ],
-            [g1[1] + g2[1]]
+            [g_reduce[0]],
+            [ den_reduction]
         ])
         
         return reduction
@@ -331,8 +366,8 @@ class GeneratingSeriesNum(np.ndarray, GS_Base):
             collected_terms.append(temp_term)
         
         return collected_terms
-
-            
+ 
+           
 class GeneratingSeriesSym(GS_Base):
     __slots__ = ("coeff", "words", "dens")
     
@@ -357,6 +392,15 @@ class GeneratingSeriesSym(GS_Base):
             self.coeff = args[0]
             self.words = deque(args[1])
             self.dens = deque()
+    
+    @property
+    def n_excites(self):
+        count = 0
+        x1 = symbols("x1")
+        for word in self.words:
+            if word == x1:
+                count += 1
+        return count
     
     def __repr__(self):
         return self.__str__()
@@ -385,9 +429,18 @@ class GeneratingSeriesSym(GS_Base):
             return str(np.array([[self.coeff, *self.words], [*self.dens, 0]]))
         else:
             return f"coeff:{self.coeff}\nwords:{self.words}\ndens:{self.dens}"
-        
+ 
+    def get_words(self):
+        return symbols("x0 x1")
+    
+    def get_numer(self):
+        return self.words
+    
     def get_coeff(self):
         return self.coeff
+    
+    def scale_coeff(self, scale):
+        self.coeff *= scale
         
     def prepend_multiplier(self, multiplier):
         """
@@ -426,11 +479,15 @@ class GeneratingSeriesSym(GS_Base):
     def first_term(self, gs_reduct):
         return (1, GeneratingSeriesSym(1, [gs_reduct[0]]))
     
-    def reduction_term(self, g1, g2):
+    def reduction_term(self, g_reduce, *g_others):
         """
         Gets the term to append to the stack when reducing g1.
         """
-        return (g1[0], g1[1] + g2[1])
+        den_reduction = g_reduce[1]
+        for g_other in g_others:
+            den_reduction += g_other[1]
+            
+        return (g_reduce[0], den_reduction)
     
     def add_to_stack(self, grid_sec, count, new_term, current_stack):
         """
@@ -524,7 +581,10 @@ class GeneratingSeriesSym(GS_Base):
             collected_terms.append(temp_term)
         
         return collected_terms
-
+    
+    def to_array(self):
+        return np.array([self.coeff, *self.words],[*self.dens, 0])
+        
 
 if __name__ == "__main__":
     import sympy as sym

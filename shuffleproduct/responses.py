@@ -5,8 +5,7 @@ Created on Fri Apr 14 15:57:45 2023
 @author: trist
 """
 import os
-import sys
-from math import factorial, prod, comb
+from math import factorial, comb, prod
 import subprocess
 from collections import defaultdict
 from itertools import product
@@ -14,33 +13,30 @@ from operator import itemgetter
 
 import numpy as np
 import sympy as sym
-from sympy import Symbol, Wild
+from sympy import symbols, Wild
 from sympy.core.numbers import Number as SympyNumber
 from sympy.core.add import Add as SympyAdd
 from sympy.functions.elementary.exponential import exp as sympyexp
 
-sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
 import shuffle as shfl
-import shufflesym as shfls
-from generating_series import GeneratingSeriesSym as GS
-import generating as gsym
+from generating_series import GeneratingSeries as GS
 
 
-def array_to_fraction(terms):
+def to_fraction(terms):
     """
-    This converts from the array form of the generating series to the fraction
-    form, so they can be sovled by sympy's partial fraction calculator.
+    This converts from the array form of the generating series to the
+    fraction form, so they can be sovled by a partial fraction calculator.
+    
+    The arive herer in "tuple form"
     """
+    x0, x1 = symbols("x0 x1")
     output_list = []
-    x0 = Symbol("x0")
     for term in terms:
         top_row = term[1][0].astype(dtype="O")
         bottom_row = term[1][1]
         top_row[np.equal(top_row, 0)] = x0
-        top_row[np.equal(top_row, 1)] = Symbol("x1")
-        
-        # top_row[top_row == 2] = 1 # Used in imp response for term of len 1.
-    
+        top_row[np.equal(top_row, 1)] = x1
+            
         numerator = prod(top_row)
         denominator = prod([(1 + i*x0) for i in bottom_row])
         
@@ -49,47 +45,14 @@ def array_to_fraction(terms):
     return output_list
 
 
-def calculate_response(gs, input_type, *args, **kwargs):
-    """
-    This calculates the response for some generating series, given the type
-    of input.
-    """
-    
-    if input_type == "step":
-        raise NotImplementedError
-    
-    elif input_type == "sine":
-        raise NotImplementedError
-    
-    elif input_type == "exponential":
-        raise NotImplementedError
-            
-    elif input_type == "polynomial":
-        raise NotImplementedError
-        
-    elif input_type in ("GWN", "gwn"):
-        gs_response = gwn_response(gs, *args, **kwargs)
-    
-    elif input_type == "impulse":
-        gs_response = impulse(gs, *args, **kwargs)
-        
-    else:
-        raise NotImplementedError(f"Unknown response f{input_type}.")
-        
-    partfrac_sum = matlab_partfrac(gs_response)
-
-    ts = inverse_lb(partfrac_sum)
-    
-    return ts
- 
-    
 def step_input(scheme, amplitude=1):
     """
     Converts the generating series to have a step input.
     """
+
     step_gs = []
-    for term in array_to_fraction(scheme):
-        step_gs.append(term.subs({Symbol("x1"): amplitude * Symbol("x0")}))
+    for term in to_fraction(scheme):
+        step_gs.append(term.subs({symbols("x1"): amplitude * symbols("x0")}))
         
     return step_gs
 
@@ -98,6 +61,8 @@ def gwn_response(scheme, sigma=1):
     """
     Calculates the GWN response given an input generating series.
     """
+    raise NotImplementedError("This hasnt been generalised to gs type")
+    
     gwn = []
     
     # This first section of the for-loop is getting the terms of the desired
@@ -143,7 +108,7 @@ def gwn_response(scheme, sigma=1):
                     raise ValueError("Code should not be here.")
             gwn.append((coeff, new_term))
     
-    return array_to_fraction(gwn)
+    return to_fraction(gwn)
             
 
 def impulse(scheme, amplitude=1):
@@ -154,54 +119,28 @@ def impulse(scheme, amplitude=1):
     This is used if the generating series have already been expanded. For
     efficiency use impulse_from_iter().
     """
-    imp = []
-    for coeff, term in scheme:
-        x0_storage = []
-        for i, x_i in enumerate(term[0, :]):
-            if x_i == 1:
-                if all(np.equal(term[0, i:], 1)):
-                    n = int(np.real(np.sum(term[0, :])))
-                    frac = (
-                        coeff/factorial(int(n)) / (1 + term[1, i]*Symbol("x0"))
-                    )
-                    if x0_storage:
-                        for x0_term in x0_storage:
-                            frac *= x0_term
-                    imp.append(amplitude**n * frac)
-                break
-            elif x_i == 0:
-                x0_storage.append(Symbol("x0") / (1 + term[1, i]*Symbol("x0")))
-            else:
-                raise ValueError("Unknown term in 0th row.")
-
-    return imp
-
-
-def impulsesym(scheme, amplitude=1):
-    """
-    Defined in "Functional Analysis of Nonlinear Circuits- a Generating Power
-    Series Approach".
+    if scheme[0][1].dtype == object:
+        x0, x1 = symbols("x0 x1")
+    else:
+        x0, x1, = 0, 1
     
-    This is used if the generating series have already been expanded. For
-    efficiency use impulse_from_iter().
-    """
     imp = []
     for coeff, term in scheme:
         x0_storage = []
         for i, x_i in enumerate(term[0, :]):
-            if x_i == Symbol("x1"):
-                if all(np.equal(term[0, i:], Symbol("x1"))):
+            if x_i == x1:
+                if all(np.equal(term[0, i:], x1)):
                     n = term.shape[1] - i
                     frac = (
-                        (coeff/factorial(int(n))) / (1-term[1, i]*Symbol("x0"))
+                        coeff/factorial(int(n)) / (1+term[1, i]*symbols("x0"))
                     )
                     if x0_storage:
                         for x0_term in x0_storage:
                             frac *= x0_term
                     imp.append(amplitude**n * frac)
                 break
-            elif x_i == Symbol("x0"):
-                x0_storage.append(Symbol("x0") / (1 - term[1, i]*Symbol("x0")))
+            elif x_i == x0:
+                x0_storage.append(symbols("x0") / (1+term[1, i]*symbols("x0")))
             else:
                 raise ValueError("Unknown term in 0th row.")
 
@@ -218,8 +157,11 @@ def impulse_from_iter(
     in a efficiency gains when comparing to expanding the generating series
     and then applying the impulse response.
     """
-    multipliers = shfl.wrap_term(multipliers, np.ndarray)
-    g0 = shfl.wrap_term(g0, GS)
+    x0, x1 = g0.get_words()
+    is_npy = isinstance(g0, np.ndarray)
+    
+    multipliers = shfl.wrap_term(multipliers)
+    g0 = shfl.wrap_term(g0)
     
     term_storage = defaultdict(list)
     term_storage[0].extend(g0)
@@ -230,78 +172,33 @@ def impulse_from_iter(
             terms = itemgetter(*part)(term_storage)
             for in_perm in product(*terms):
                 term_storage[depth + 1].extend(shfl.nShuffles(*in_perm))
-            term_storage[depth + 1] = shfl.collect(term_storage[depth + 1])
-            
+            term_storage[depth + 1] = g0[0].collect(term_storage[depth + 1])
+        
         # After the shuffles for this iteration's depth have been caluclated,
         # prepend the multiplier to each term.
         next_terms = []
         for gs_term in term_storage[depth + 1]:
             been_1 = False
-            for x in gs_term[0, 1:]:
-                if x == 1:
+            for x in gs_term.get_words():
+                if x == x1:
                     been_1 = True
                 
-                elif been_1 and x == 0:
+                elif been_1 and x == x0:
                     break
             else:
                 for multiplier in multipliers:
-                    next_terms.append(gs_term.prepend_multiplier(multiplier))
+                    if is_npy:
+                        temp = gs_term.prepend_multiplier(multiplier)
+                        next_terms.append(temp)
+                        term_storage[depth + 1] = next_terms
+                    else:
+                        gs_term.prepend_multiplier(multiplier)
 
         term_storage[depth + 1] = next_terms
     
-    tuple_form = shfl.handle_output_type(term_storage, tuple)
+    tuple_form = g0[0].handle_output_type(term_storage, tuple)
     
     return impulse(tuple_form, amplitude)
-
-
-def impulse_from_itersym(
-        g0, multipliers, n_shuffles, iter_depth=2, amplitude=1):
-    """
-    The idea here centers around the fact that most of the term in the impulse
-    response are thrown away. So when iterating the generating series, the
-    terms that will definitely not result in any terms later on can be thrown
-    away early, therefore we no longer have to expand these terms, this results
-    in a efficiency gains when comparing to expanding the generating series
-    and then applying the impulse response.
-    """
-    multipliers = shfls.wrap_term(multipliers, gsym.GeneratingSeries)
-    g0 = shfls.wrap_term(g0, gsym.GeneratingSeries)
-    
-    term_storage = defaultdict(list)
-    term_storage[0].extend(g0)
-    
-    for depth in range(iter_depth):
-        for part in shfls.partitions(depth, n_shuffles):
-            # Cartesian product of all the inputs, instead of nested for-loop.
-            terms = itemgetter(*part)(term_storage)
-            for in_perm in product(*terms):
-                term_storage[depth + 1].extend(shfls.nShuffles(*in_perm))
-            term_storage[depth + 1] = shfls.collect(term_storage[depth + 1])
-            
-        # After the shuffles for this iteration's depth have been caluclated,
-        # prepend the multiplier to each term.
-        for gs_term in term_storage[depth + 1]:
-            been_1 = False
-            for x in gs_term.words:
-                if x in (1, Symbol("x1")):
-                    been_1 = True
-                
-                elif been_1 and x in (0, Symbol("x0")):
-                    break
-            else:
-                for multiplier in multipliers:
-                    gs_term.prepend_multiplier(multiplier)
-    
-    tuple_form = shfls.handle_output_type(term_storage, tuple)
-    
-    return impulsesym(tuple_form, amplitude)
-  
-  
-def deterministic_response(scheme, excitation):
-    """
-    
-    """
-    raise NotImplementedError
 
       
 def matlab_partfrac(
@@ -348,14 +245,6 @@ def matlab_partfrac(
 # =============================================================================
 # Converting to the time domain.
 # =============================================================================
-# def get_symbol(term):
-#     symbol = list(term.free_symbols)
-#     if (len(symbol) != 1):
-#         raise ValueError("There should only be one symbol in the term.")
-
-#     return symbol[0]
-
-
 def convert_term(term):
     """
     Checks against each of the required forms, if the correct form is
@@ -393,11 +282,6 @@ def inverse_lb(sum_of_fractions):
             term_ts = convert_term(term)
             ts += term_ts
         
-        # value = ts.subs({Symbol('t'): 5})
-        # if abs(value) > 10:
-        #     print(
-        # f"term is greater with a value of {value}\n\n", term, end="\n\n\n"
-        # )
     return ts
 
 
@@ -423,7 +307,7 @@ def is_polynomial_form(term):
     if is_unit_form(term):
         return False
     
-    x0 = Symbol("x0")
+    x0 = symbols("x0")
     a = Wild("a", exclude=[x0, 0])
     n = Wild("n")
         
@@ -441,7 +325,7 @@ def lb_polynomial(term):
     """
     a * x ** n
     """
-    x0 = Symbol("x0")
+    x0, t = symbols("x0 t")
     a = Wild("a", exclude=[x0, 0])
     n = Wild("n", exclude=[0])
         
@@ -450,8 +334,6 @@ def lb_polynomial(term):
     match = term.match(polynomial_form)
     n = match[n]
     a = match[a]
-    
-    t = Symbol("t")
     
     return (a / sym.factorial(n)) * t ** n
 
@@ -463,7 +345,7 @@ def is_exponential_form(term):
     if is_unit_form(term):
         return False
     
-    x0 = Symbol("x0")
+    x0 = symbols("x0")
 
     b = Wild("b", exclude=[x0])
     c = Wild("c", exclude=[x0])
@@ -489,7 +371,7 @@ def lb_exponential(term):
     """
     a / b * (c + d*x0) ** -n
     """
-    x0 = Symbol("x0")
+    x0 = symbols("x0")
 
     b = Wild("b", exclude=[x0])
     c = Wild("c", exclude=[x0])
@@ -506,7 +388,7 @@ def lb_exponential(term):
     d = -match[d]
     n = match[n]
     
-    t = Symbol("t")
+    t = symbols("t")
     
     coeff1 = a / (b * c ** n)
     coeff2 = d / c
@@ -526,7 +408,7 @@ def is_cosine_form(term):
     if is_unit_form(term):
         return False
     
-    x0 = Symbol("x0")
+    x0 = symbols("x0")
     a = Wild("a", exclude=[x0, 0])
     b = Wild("b", exclude=[x0, 0])
     c = Wild("c", exclude=[x0, 0])
@@ -547,7 +429,7 @@ def lb_cosine(term):
     """
     a * (b + c*x**2) ** -1
     """
-    x0 = Symbol("x0")
+    x0 = symbols("x0")
     a = Wild("a", exclude=[x0, 0])
     b = Wild("b", exclude=[x0, 0])
     c = Wild("c", exclude=[x0, 0])
@@ -562,7 +444,7 @@ def lb_cosine(term):
     c = match[c]
     n = match[n]
     
-    t = Symbol("t")
+    t = symbols("t")
     
     coeff1 = a / b**n
     coeff2 = sym.sqrt(c / b)
@@ -611,15 +493,21 @@ def time_function(time_domain):
     Get a function of the response wth respect to time.
     
     """
-    return sym.lambdify(Symbol('t'), time_domain)
+    return sym.lambdify(symbols('t'), time_domain)
 
 
 if __name__ == "__main__":
     
-    A, k2, x0, a1, a2 = sym.symbols("A k2 x0 a1 a2")
-    term = A*k2/((6*a2*x0 - 3)*(a1**3*a2 + 6*a1**2*a2**2 + 11*a1*a2**3 + 6*a2**4))
+    x0, x1, a, b = symbols("x0 x1 a b")
+    multiplier = GS([
+        [-b, x0],
+        [ a,  0]
+    ])
     
-    match = is_exponential_form(term)
-    print(*match.items(), sep="\n")
-    aaa = lb_exponential(term)
+    g0 = GS([
+        [ 1, x1],
+        [ a,  0]
+    ])
+    
+    test = impulse_from_iter(g0, multiplier, 2, 2, 1)
     

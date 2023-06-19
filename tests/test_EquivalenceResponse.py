@@ -7,12 +7,16 @@ Created on Tue May 2 17:16:23 2023
 This serves as a check from the system equation to the time domain response.
 The results are compared to previously evaluated systems in the literature.
 """
+import os
+import sys
 import unittest
 
 import numpy as np
 from sympy import Symbol, nsimplify
 from sympy.functions.elementary.exponential import exp
 
+sys.path.insert(0, os.path.dirname(os.getcwd()) + r"/shuffleproduct")
+from generating_series import GeneratingSeries
 import shuffle as shfl
 import responses as rsps
 
@@ -63,7 +67,7 @@ class TestPaper4(unittest.TestCase):
         [ a,  0]
     ])
     
-    g0 = shfl.GeneratingSeries(np.array([
+    g0 = GeneratingSeries(np.array([
         [ 1, x1],
         [ a,  0]
     ]))

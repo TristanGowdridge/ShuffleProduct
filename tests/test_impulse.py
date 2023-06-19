@@ -13,7 +13,7 @@ from sympy import Symbol
 from sympy.functions.elementary.exponential import exp
 import numpy as np
 
-sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
+sys.path.insert(0, os.path.dirname(os.getcwd()) + "/shuffleproduct")
 import shuffle as shfl
 import responses as rsps
 
@@ -62,7 +62,7 @@ class TestImpulse(unittest.TestCase):
         """
         # Import GS terms from another test's class variable.
         correct_gs = __import__("test_EquivalenceGS").TestPaperImp.correct_gs
-        correct_gs = shfl.handle_output_type(
+        correct_gs = correct_gs[0].handle_output_type(
             {0: correct_gs}, return_type=tuple
         )
         global imp_rep

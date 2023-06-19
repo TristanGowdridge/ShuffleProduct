@@ -49,7 +49,7 @@ def shuffle_cacher(func):
                 scale = coeff / prev_coeff
                 to_return = []
                 for prev in copy.deepcopy(prev_result):
-                    prev.coeff *= scale
+                    prev.scale_coeff(scale)
                     to_return.append(prev)
                 return to_return
             else:
@@ -158,6 +158,68 @@ def partitions(iter_depth: int, number_of_shuffles: int) -> Tuple[int]:
     return parts
 
 
+# @shuffle_cacher
+def shuffle(*args):
+    """
+    Make use of numpy as grid
+    Vectorise functions with ufunc?
+    """
+    grid = defaultdict(list)
+    n_gs = len(args)
+    ends, gss, gs_lens = [], [], []
+    for gs in args:
+        _end, _gs, _gs_len = args[0].get_end(gs)
+        ends.append(_end)
+        gss.append(_gs)
+        gs_lens.append(_gs_len)
+    gs_lens = np.array(gs_lens)
+    
+    # Create essentially a nested for loop over all combinations of the
+    # generating series indices.
+    for index in product(*[range(gs_len+1) for gs_len in gs_lens]):
+        index = np.array(index)
+        are_reducible = (index < gs_lens)
+        
+        loop_terms = []
+        for i, is_reducible, gs, end in zip(index, are_reducible, gss, ends):
+            if is_reducible:
+                loop_terms.append(gs.get_term(i))
+            else:
+                loop_terms.append(end)
+        
+        gs_reducts = []
+        for i, (gs, is_reducible) in enumerate(zip(loop_terms, are_reducible)):
+            if is_reducible:
+                gs_reducts.append(gs.reduction_term(
+                    gs, *loop_terms[:i], *loop_terms[(i+1):])
+                )
+            else:
+                gs_reducts.append(None)
+            
+            current = grid[tuple(index)]
+            next_indices = sorted(partitions(1, n_gs), reverse=True)
+            if not current:
+                for next_index, gs_reduct in zip(next_indices, gs_reducts):
+                    # Special case for first loop pass.
+                    grid[next_index].append(args[0].first_term(gs_reduct))
+                continue
+            
+            for count, curr in args[0].collect_grid(current):
+                for next_index, gs_reduct, is_reducible in zip(next_indices, gs_reducts, are_reducible):
+                    next_index = np.array(next_index)
+                    if is_reducible:
+                        next_index = index + next_index
+                        args[0].add_to_stack(
+                            grid[tuple(next_index)], count, gs_reduct, curr
+                        )
+                        
+            to_return = args[0].handle_end(grid)
+
+    # to_return = gs1.handle_end(grid, gs1_len, gs2_len, end1, end2, gs1, gs2)
+        
+    # return tuple(to_return)
+
+
 @shuffle_cacher
 def nShuffles(
         *args: Union[GS, List[GS]]
@@ -181,12 +243,11 @@ def nShuffles(
     output_gs = gs1[0].collect(output_gs)
     
     # Iterate over the remaining arguments.
-    for gs1 in args[2:]:
-        # gs1 = wrap_term(gs1, GS)
+    for gs_i in args[2:]:
         storage = []
-        for gs2 in output_gs:
-            temp_output = binary_shuffle(gs1, gs2)
-            temp_output = gs1.collect(temp_output)
+        for gs_j in output_gs:
+            temp_output = binary_shuffle(gs_i, gs_j)
+            temp_output = gs1[0].collect(temp_output)
             storage.extend(temp_output)
         output_gs = gs1[0].collect(storage)
     output_gs = gs1[0].collect(output_gs)
@@ -205,13 +266,7 @@ def iter_gs_worker(part, term_storage, depth):
         term_storage[depth + 1].extend(nShuffles(*in_perm))
     
 
-def iterate_gs(
-        g0: Union[GS, List[GS]],
-        multipliers: List[np.ndarray],
-        n_shuffles: int,
-        iter_depth: int = 2,
-        return_type=tuple
-) -> Tuple[GS]:
+def iterate_gs(g0, multipliers, n_shuffles, iter_depth=2, return_type=tuple):
     """
     This follows the iterative procedure of determining the generating series
     by summing over the shuffles of all the partitions of a number. The
@@ -240,15 +295,23 @@ def iterate_gs(
         next_terms = []
         for gs_term in term_storage[depth + 1]:
             for multiplier in multipliers:
-                if is_npy:
-                    temp = gs_term.prepend_multiplier(multiplier)
-                    next_terms.append(temp)
-                    term_storage[depth + 1] = next_terms
-                else:
-                    gs_term.prepend_multiplier(multiplier)
+                var_prepend(
+                    is_npy, gs_term, multiplier, term_storage,
+                    depth, next_terms
+                )
                     
     return g0[0].handle_output_type(term_storage, return_type)
-    
+
+
+def var_prepend(is_npy, gs_term, multiplier, term_storage, depth, next_terms):
+    if is_npy:
+        print("Adding next_terms on every loop iter")
+        temp = gs_term.prepend_multiplier(multiplier)
+        next_terms.append(temp)
+        term_storage[depth + 1] = next_terms
+    else:
+        gs_term.prepend_multiplier(multiplier)
+
 
 def sdof_roots(m, c, k):
     """
@@ -283,9 +346,9 @@ if __name__ == "__main__":
         [ 1, x1],
         [ a,  0]
     ])
-    
-    from time import perf_counter
-    iter_args = (g0, multiplier, 2)
-    t0 = perf_counter()
-    scheme = iterate_gs(*iter_args, iter_depth=7)
-    print(perf_counter()-t0)
+    shuffle_out = shuffle(g0, g0, g0)
+    # from time import perf_counter
+    # iter_args = (g0, multiplier, 2)
+    # t0 = perf_counter()
+    # scheme = iterate_gs(*iter_args, iter_depth=7)
+    # print(perf_counter()-t0)

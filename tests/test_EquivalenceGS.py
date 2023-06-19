@@ -10,7 +10,7 @@ import sys
 import unittest
 import numpy as np
 
-sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
+sys.path.insert(0, os.path.dirname(os.getcwd()) + r"/shuffleproduct")
 from generating_series import GeneratingSeriesNum as GS
 from shuffle import binary_shuffle
 import shuffle as shfl

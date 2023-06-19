@@ -1,7 +1,14 @@
 function f = pf_dict(filename, keys)
-syms x0 a1 a2 a b k1 k2 k3 A %  These will be used in the evals.
 
-PARALLEL_CUT_IN = 200000000000000000000000000000000000000000000000000000000000000000000000000000000000;
+x0 = sym("x0");
+a1 = sym("a1");
+a2 = sym("a2");
+k1 = sym("k1");
+k2 = sym("k2");
+k3 = sym("k3");
+A  = sym("A");
+
+PARALLEL_CUT_IN = 20;
 
 % If a file of this name already exists, delete it to not cause repeats in
 % the data.
@@ -63,4 +70,3 @@ for key = keys
     end
 end
 end
-

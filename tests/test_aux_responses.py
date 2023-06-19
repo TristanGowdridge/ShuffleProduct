@@ -6,7 +6,7 @@ Created on Thu May 11 15:10:10 2023
 """
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
+sys.path.insert(0, os.path.dirname(os.getcwd()) + "/shuffleproduct")
 import unittest
 
 import numpy as np
@@ -55,10 +55,10 @@ class TestArray2Fraction(unittest.TestCase):
         
         # Handling the array form.
         gs = __import__("test_EquivalenceGS").TestPaperImp.gs_unsorted
-        gs = shfl.handle_output_type({0: gs}, return_type=tuple)
+        gs = gs[0].handle_output_type({0: gs}, return_type=tuple)
         
         # Converting to fractional form and sorting.
-        gs_a2f = rsps.array_to_fraction(gs)
+        gs_a2f = rsps.to_fraction(gs)
         gs_a2f = sorted(gs_a2f, key=sort_key)
         
         vals2 = lambda x: x.subs({x0: 2, x1: 3})

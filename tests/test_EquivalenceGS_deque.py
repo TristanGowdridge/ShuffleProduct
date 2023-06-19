@@ -4,7 +4,6 @@ Created on Tue Jun  6 10:18:58 2023
 
 @author: trist
 """
-
 import os
 import sys
 
@@ -12,7 +11,7 @@ import unittest
 import numpy as np
 from sympy import symbols
 
-sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
+sys.path.insert(0, os.path.dirname(os.getcwd()) + r"/shuffleproduct")
 from generating_series import GeneratingSeriesSym as GS
 import shuffle as shfl
 from shuffle import binary_shuffle

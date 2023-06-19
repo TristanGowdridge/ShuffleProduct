@@ -1,5 +1,12 @@
 function f = partial_fractions(filename, precision)
-syms x0 a1 a2 a b k1 k2 k3 A %  These will be used in the evals.
+
+x0 = sym("x0");
+a1 = sym("a1");
+a2 = sym("a2");
+k1 = sym("k1");
+k2 = sym("k2");
+k3 = sym("k3");
+A  = sym("A");
 
 PARALLEL_CUT_IN = 20;
 
@@ -48,6 +55,7 @@ else % Parallel.
     % Loop over the length of line_list and assign the partial fractions
     % expansion to each index.
     parpool('Processes')
+
     parfor i =1:n
         term = line_list{i};
         if isa(term, 'sym')

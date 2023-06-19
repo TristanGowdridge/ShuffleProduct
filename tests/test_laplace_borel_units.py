@@ -11,7 +11,7 @@ import unittest
 import sympy as sym
 from sympy.functions.elementary.exponential import exp as sympyexp
 
-sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
+sys.path.insert(0, os.path.dirname(os.getcwd()) + r"/shuffleproduct")
 import responses as rsps
 
 x = sym.Symbol('x0')

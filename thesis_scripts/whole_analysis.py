@@ -11,47 +11,43 @@ from collections import defaultdict
 from operator import itemgetter
 from itertools import product
 import subprocess
+import time
+import pickle as pkl
 
 import numpy as np
 from sympy import symbols, lambdify, factorial
 
-from params import A, m, c, k1, k2, k3, plot, t
-from vci_quad_cube import y1 as y1_volt
-from vci_quad_cube import y2 as y2_volt
-from vci_quad_cube import y3 as y3_volt
+from params import A, m, c, k1, k2, k3, t, iter_depth, to_bmatrix
+# from vci_quad_cube import y1 as y1_volt
+# from vci_quad_cube import y2 as y2_volt
+# from vci_quad_cube import y3 as y3_volt
 
-sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
-import shufflesym as shfl
+sys.path.insert(0, os.path.dirname(os.getcwd()) + r"/shuffleproduct")
+import shuffle as shfl
 import responses as rsps
-from generating_series import GeneratingSeriesSym as GS
-
-
-_k2, _k3, _x0, _x1, _a1, _a2, _A = symbols("k2 k3 x0 x1 a1 a2 A")
-
-_g0 = GS([
-    [  1, _x0, _x1],
-    [_a1, _a2,   0]
-])
-
-_mult_quad = GS([
-    [-_k2, _x0, _x0],
-    [ _a1, _a2,   0]
-])
-_mult_cube = GS([
-    [-_k3, _x0, _x0],
-    [ _a1, _a2,  0]
-])
+from generating_series import GeneratingSeries as GS
 
 
 def remove_nonimp(terms):
+    """
+    Removes all the terms that have an x0 after an x1.
+    """
+    if not terms:
+        return []
+    
+    if not isinstance(terms[0], np.ndarray):
+        x0, x1 = symbols("x0 x1")
+    else:
+        x0, x1, = 0, 1
+    
     store = []
     for term in terms:
         has_been_x1 = False
-        for val in term.words:
-            if val == _x1:
+        for val in term.get_numer():
+            if val == x1:
                 has_been_x1 = True
                 continue
-            elif val == _x0 and (not has_been_x1):
+            elif val == x0 and (not has_been_x1):
                 continue
             else:
                 break
@@ -61,16 +57,34 @@ def remove_nonimp(terms):
     return store
 
 
-def iterate_quad_cubic(iter_depth):
+def check_n_x1s_less_than_iter_depth(terms, iter_depth):
+    """
+    
+    """
+    count = 0
+    for term in terms:
+        count += term.n_excites
+    
+    return count <= (iter_depth + 1)
+
+
+def iterate_quad_cubic(g0, mults, iter_depth):
     """
     A very hastily written iterative expansion of a SDOF oscillator with
     quadratic and cubic nonlinearities.
     
     This function is reliant on global variables, be careful! It also isn't
     generalisable at all, but it's what we need for our specific example.
+    
+    Should write this so the function takes in (m, c, k1) and then determines
+    the number of nonlinearities by the size of the list passed in.
     """
+    mult_quad, mult_cube = mults
+    
+    is_npy = isinstance(g0, np.ndarray)
+    
     term_storage = defaultdict(list)
-    term_storage[0].append(_g0)
+    term_storage[0].append(g0)
     
     term_storage_quad = defaultdict(list)
     term_storage_cube = defaultdict(list)
@@ -79,40 +93,60 @@ def iterate_quad_cubic(iter_depth):
         for part in shfl.partitions(depth, 2):
             terms = itemgetter(*part)(term_storage)
             for in_perm in product(*terms):
-                term_storage_quad[depth+1].extend(shfl.nShuffles(*in_perm))
-        term_storage_quad[depth+1] = shfl.collect(term_storage_quad[depth+1])
+                if check_n_x1s_less_than_iter_depth(in_perm, iter_depth):
+                    term_storage_quad[depth+1].extend(shfl.nShuffles(*in_perm))
+        
+        term_storage_quad[depth+1] = g0.collect(term_storage_quad[depth+1])
         term_storage_quad[depth+1] = remove_nonimp(term_storage_quad[depth+1])
         
         for part in shfl.partitions(depth, 3):
             terms = itemgetter(*part)(term_storage)
             for in_perm in product(*terms):
-                term_storage_cube[depth+1].extend(shfl.nShuffles(*in_perm))
-        term_storage_cube[depth+1] = shfl.collect(term_storage_cube[depth+1])
+                if check_n_x1s_less_than_iter_depth(in_perm, iter_depth):
+                    term_storage_cube[depth+1].extend(shfl.nShuffles(*in_perm))
+        term_storage_cube[depth+1] = g0.collect(term_storage_cube[depth+1])
         term_storage_cube[depth+1] = remove_nonimp(term_storage_cube[depth+1])
     
         # After the shuffles for this iteration's depth have been caluclated,
         # prepend the multiplier to each term.
+        next_terms = []
         for gs_term in term_storage_quad[depth+1]:
-            gs_term.prepend_multiplier(_mult_quad)
+            shfl.var_prepend(
+                is_npy, gs_term, mult_quad, term_storage_quad,
+                depth, next_terms
+            )
         term_storage[depth+1].extend(term_storage_quad[depth+1])
         
+        next_terms = []
         for gs_term in term_storage_cube[depth+1]:
-            gs_term.prepend_multiplier(_mult_cube)
+            shfl.var_prepend(
+                is_npy, gs_term, mult_cube, term_storage_cube,
+                depth, next_terms
+            )
         term_storage[depth+1].extend(term_storage_cube[depth+1])
         
-        term_storage[depth+1] = shfl.collect(term_storage[depth+1])
+        term_storage[depth+1] = g0.collect(term_storage[depth+1])
     
-    return shfl.handle_output_type(term_storage, tuple)
+    return g0.handle_output_type(term_storage, tuple)
 
 
-def impulsehere(terms, A, iter_depth):
+def impulsehere(terms, amp, iter_depth):
+    """
+    
+    """
     imp = defaultdict(list)
-    x1_sym, x0_sym = symbols("x1 x0")
-    for coeff, term in scheme:
+    
+    x0_sym = symbols("x0")
+    if terms[0][1].dtype == object:
+        x0, x1 = symbols("x0 x1")
+    else:
+        x0, x1 = 0, 1
+    
+    for coeff, term in terms:
         x0_storage = []
         for i, x_i in enumerate(term[0, :]):
-            if x_i == x1_sym:
-                if all(np.equal(term[0, i:], x1_sym)):
+            if x_i == x1:
+                if all(np.equal(term[0, i:], x1)):
                     n = term.shape[1] - i
                     frac = (
                         (coeff / factorial(int(n))) / (1 + term[1, i]*x0_sym)
@@ -120,9 +154,9 @@ def impulsehere(terms, A, iter_depth):
                     if x0_storage:
                         for x0_term in x0_storage:
                             frac *= x0_term
-                    imp[n].append(A**n * frac)
+                    imp[n].append(amp**n * frac)
                 break
-            elif x_i == x0_sym:
+            elif x_i == x0:
                 x0_storage.append(x0_sym / (1 + term[1, i]*x0_sym))
             else:
                 raise ValueError("Unknown term in 0th row.")
@@ -170,7 +204,9 @@ def convert_gs_to_time(terms, amp, iter_depth):
     """
     g = impulsehere(terms, amp, iter_depth)
     
-    gpf = matlab_partfrac_here(g)
+    gpf = matlab_partfrac_here(
+        g, filename="19thJuneEvening", delete_files=False
+    )
     
     y = []
     for pf in gpf.values():
@@ -179,38 +215,114 @@ def convert_gs_to_time(terms, amp, iter_depth):
     return y
 
 
-iter_depth = 2
-scheme = iterate_quad_cubic(iter_depth)
+t0 = time.perf_counter()
+# =============================================================================
+# Symbolic
+# =============================================================================
+_k2, _k3, _x0, _x1, _a1, _a2, _A = symbols("k2 k3 x0 x1 a1 a2 A")
 
-y_gs = convert_gs_to_time(scheme, _A, iter_depth)
+g0 = GS([
+    [  1, _x0, _x1],
+    [_a1, _a2,   0]
+])
 
-a1, a2 = shfl.sdof_roots(m, c, k1)
+mult_quad = GS([
+    [-_k2, _x0, _x0],
+    [ _a1, _a2,   0]
+])
+mult_cube = GS([
+    [-_k3, _x0, _x0],
+    [ _a1, _a2,  0]
+])
 
-vals = {
-    _A: A,
-    _a1: -a1,
-    _a2: -a2,
-    _k2: k2,
-    _k3: k3,
-}
+mults = [mult_quad, mult_cube]
 
-y1_g = lambdify(symbols('t'), y_gs[0].subs(vals))(t)
-y2_g = lambdify(symbols('t'), y_gs[1].subs(vals))(t)
-y3_g = lambdify(symbols('t'), y_gs[2].subs(vals))(t)
-# y4_g = lambdify(symbols('t'), y_gs[3].subs(vals))(t)
+scheme = iterate_quad_cubic(g0, mults, iter_depth)
 
-_figax = plot(y1_volt, None, "$y_1^v$")
-_figax = plot(y2_volt, _figax, "$y_2^v$")
-_figax = plot(y3_volt, _figax, "$y_3^v$")
+for i in scheme:
+    to_bmatrix(i)
+    print(r"\\")
 
-_figax = plot(y1_g, _figax, "$y^g_1$", linestyle="--")
-_figax = plot(y2_g, _figax, "$y^g_2$", linestyle="--")
-_figax = plot(y3_g, _figax, "$y^g_3$", linestyle="--")
+# y_gs = convert_gs_to_time(scheme, _A, iter_depth)
+# a1, a2 = shfl.sdof_roots(m, c, k1)
+
+
+# vals = {
+#     _A: A,
+#     _a1: a1,
+#     _a2: a2,
+#     _k2: k2,
+#     _k3: k3,
+# }
+
+# for i in range(iter_depth+1):
+#     with open(f"quad_cube_y{i}_gen_sym.txt", "wb") as f_sym:
+#         pkl.dump(y_gs[i], f_sym)
+#     print(i)
+#     temp = lambdify(symbols('t'), y_gs[i].subs(vals))(t)
+#     np.save(f"quad_cube_y{i}_gen_num.npy", temp)
+
+# y1_g = lambdify(symbols('t'), y_gs[0].subs(vals))(t)
+# y2_g = lambdify(symbols('t'), y_gs[1].subs(vals))(t)  # iter_depth = 1
+# y3_g = lambdify(symbols('t'), y_gs[2].subs(vals))(t)  # iter_depth = 2
+# y4_g = lambdify(symbols('t'), y_gs[3].subs(vals))(t)  # iter_depth = 3
+# y5_g = lambdify(symbols('t'), y_gs[4].subs(vals))(t)  # iter_depth = 4
+# y6_g = lambdify(symbols('t'), y_gs[5].subs(vals))(t)  # iter_depth = 5
+
+
+# =============================================================================
+# Numeric
+# =============================================================================
+# x0 = 0
+# x1 = 1
+# a1, a2 = shfl.sdof_roots(m, c, k1)
+
+# g0 = GS([
+#     [  1, x0, x1],
+#     [ a1, a2,   0]
+# ])
+
+# mult_quad = GS([
+#     [-k2, x0, x0],
+#     [ a1, a2,   0]
+# ])
+# mult_cube = GS([
+#     [-k3, x0, x0],
+#     [ a1, a2,  0]
+# ])
+
+# mults = [mult_quad, mult_cube]
+# iter_depth = 3
+
+# scheme = iterate_quad_cubic(g0, mults, iter_depth)
+# y_gs = convert_gs_to_time(scheme, A, iter_depth)
+
+# y1_g = lambdify(symbols('t'), y_gs[0])(t)
+# y2_g = lambdify(symbols('t'), y_gs[1])(t)  # iter_depth = 1
+# y3_g = lambdify(symbols('t'), y_gs[2])(t)  # iter_depth = 2
+# y4_g = lambdify(symbols('t'), y_gs[3])(t)  # iter_depth = 3
+# y5_g = lambdify(symbols('t'), y_gs[4])(t)  # iter_depth = 4
+
+
+# =============================================================================
+# Plotting
+# =============================================================================
+print(f"time taken for full calculation was {time.perf_counter()-t0:.2f}s.")
+# _figax = plot(y1_volt, None, "$y_1^v$")
+# _figax = plot(y2_volt, _figax, "$y_2^v$")
+# _figax = plot(y3_volt, _figax, "$y_3^v$")
+
+# _figax = plot(y1_g, _figax, "$y^g_1$", linestyle="--")
+# _figax = plot(y2_g, _figax, "$y^g_2$", linestyle="--")
+# _figax = plot(y3_g, _figax, "$y^g_3$", linestyle="--")
 # _figax = plot(y4_g, _figax, "$y^g_4$", linestyle="--")
+# _figax = plot(y5_g, _figax, "$y^g_5$", linestyle="--")
+
 # _figax = plot(y1_g + y2_g + y3_g, _figax, "$y gen 3$", linestyle="--")
 # _figax = plot(y1_g + y2_g + y3_g + y4_g, _figax, "$y gen 4$", linestyle="--")
+# _figax = plot(y1_g + y2_g + y3_g + y4_g + y5_g, _figax, "$y gen 5$", linestyle="--")
 
-_fig, _ax = _figax
-_ax.set_title(
-    f"Comparison of Duffing's equation solutions with Dirac delta {A}"
-)
+# _fig, _ax = _figax
+# _ax.set_title(
+#     f"Comparison of Duffing's equation solutions with Dirac delta {A}"
+# )

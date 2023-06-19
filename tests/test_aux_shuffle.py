@@ -6,7 +6,7 @@ Created on Wed Apr 19 13:07:57 2023
 """
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
+sys.path.insert(0, os.path.dirname(os.getcwd()) + r"/shuffleproduct")
 import unittest
 
 import numpy as np

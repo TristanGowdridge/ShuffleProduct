@@ -9,7 +9,7 @@ rsps.matlab_partfrac() (about 80 secs).
 """
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
+sys.path.insert(0, os.path.dirname(os.getcwd()) + "/shuffleproduct")
 
 import unittest
 
@@ -18,7 +18,7 @@ from sympy import Symbol, simplify
 from sympy.functions.elementary.exponential import exp
 
 import responses as rsps
-from shuffle import GeneratingSeries, handle_output_type
+from generating_series import GeneratingSeries
 
 # I've set these to be coprime to avoid potential factoring later on.
 a = 2
@@ -41,7 +41,7 @@ class TestPaper0(unittest.TestCase):
     -0.041666 * exp(-t), and not 0.416666 * exp(-t).
     """
     gs = __import__("test_EquivalenceGS").TestPaperImp.gs_unsorted
-    gs = handle_output_type({0: gs}, return_type=tuple)
+    gs = gs[0].handle_output_type({0: gs}, return_type=tuple)
     
     imp_time = exp(-t)                                        # Order 1
     imp_time += 1/2*exp(-3*t) - 1/6*exp(-t)                   # Order 3
@@ -168,7 +168,7 @@ class TestPaper4(unittest.TestCase):
     ))
     
     def test_term1_arr2frac(self):
-        calculated = rsps.array_to_fraction([TestPaper4.g0])[0]
+        calculated = rsps.to_fraction([TestPaper4.g0])[0]
         actual = x1_sym / (1 + a*x0_sym)
         assert calculated.equals(actual)
 
@@ -185,7 +185,7 @@ class TestPaper4(unittest.TestCase):
         assert calculated.equals(actual)
     
     def test_term2_arr2frac(self):
-        test = rsps.array_to_fraction([TestPaper4.g1])[0]
+        test = rsps.to_fraction([TestPaper4.g1])[0]
         numerator = -2*b * x0_sym*x1_sym**2
         denominator = (1+a*x0_sym)**2 * (1+2*a*x0_sym)
         assert test.equals(numerator / denominator)
@@ -207,7 +207,7 @@ class TestPaper4(unittest.TestCase):
         assert calculated.equals(actual)
         
     def test_term3_arr2frac(self):
-        test = rsps.array_to_fraction([TestPaper4.g2])[0]
+        test = rsps.to_fraction([TestPaper4.g2])[0]
         test = simplify(test)
         numerator = 4*b**2 * x0_sym**2 * x1_sym**3
         denominator = (1 + a*x0_sym)**3 * (1 + 2*a*x0_sym)**2
