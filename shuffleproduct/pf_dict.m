@@ -8,7 +8,7 @@ k2 = sym("k2");
 k3 = sym("k3");
 A  = sym("A");
 
-PARALLEL_CUT_IN = 20;
+PARALLEL_CUT_IN = 100;
 
 % If a file of this name already exists, delete it to not cause repeats in
 % the data.

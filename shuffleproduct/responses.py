@@ -16,6 +16,7 @@ import sympy as sym
 from sympy import symbols, Wild
 from sympy.core.numbers import Number as SympyNumber
 from sympy.core.add import Add as SympyAdd
+from sympy.core.mul import Mul as SympyMul
 from sympy.functions.elementary.exponential import exp as sympyexp
 
 import shuffle as shfl
@@ -232,7 +233,6 @@ def matlab_partfrac(
     sum_of_partials = []
     with open(f"{filename}_MATLAB.txt") as file:
         while line := file.readline():
-
             sum_of_partials.append(eval(line.rstrip()))
     
     if delete_files:
@@ -252,10 +252,10 @@ def convert_term(term):
     term fits no form, an error it raised.
     """
     func_pairs = (
+        (is_exponential_form, lb_exponential),
         (is_unit_form,        lb_unit),
         (is_polynomial_form,  lb_polynomial),
-        (is_exponential_form, lb_exponential),
-        (is_cosine_form,      lb_cos),
+        (is_cosine_form,      lb_cosine),
     )
     
     for (form_test, converter) in func_pairs:
@@ -273,14 +273,14 @@ def inverse_lb(sum_of_fractions):
     SympyAdd, we need to get each term in the addition and analyse these
     separately. Otherwise, the term is passed in as usual.
     """
-    ts = 0
+    ts = []
     for term in sum_of_fractions:
         if isinstance(term, SympyAdd):
             for term1 in term.make_args(term):
-                ts += convert_term(term1)
+                ts.append(convert_term(term1))
         else:
             term_ts = convert_term(term)
-            ts += term_ts
+            ts.append(term_ts)
         
     return ts
 
@@ -341,6 +341,9 @@ def lb_polynomial(term):
 def is_exponential_form(term):
     """
     Tests whether the term is of exponential form.
+    
+    This method of reducing all the denominator coefficients and only matching
+    the crucial part is much faster.
     """
     if is_unit_form(term):
         return False
@@ -349,7 +352,7 @@ def is_exponential_form(term):
 
     b = Wild("b", exclude=[x0])
     c = Wild("c", exclude=[x0])
-    d = Wild("d", exclude=[x0])
+
     n = Wild("n")
         
     a, denom = term.as_numer_denom()
@@ -357,42 +360,70 @@ def is_exponential_form(term):
     if x0 in a.free_symbols:
         return False
     
-    denom_form = b * (c + d*x0) ** n
-    match = denom.match(denom_form)
+    den_args = SympyMul.make_args(denom)
+    den_coeffs = 1
+    crucial = None
+    for den_arg in den_args:
+        if x0 in den_arg.free_symbols:
+            if not crucial:
+                crucial = den_arg
+            else:
+                return False
+        else:
+            den_coeffs *= den_arg
     
+    try:
+        if x0 in den_coeffs.free_symbols:
+            return False
+    except AttributeError:
+        pass
+        
+    # Match the crucial part of the denominator.
+    denom_form = (b + c * x0) ** n
+    match = crucial.match(denom_form)
+        
     if match:
         if not match[n].is_integer:
+            print(
+                "responses.is_exponential_form:",
+                "failing because n is not an integer"
+            )
             return False
     
-    return match
+    return bool(match)
 
 
 def lb_exponential(term):
     """
-    a / b * (c + d*x0) ** -n
+    a / (den_coeffs * (b + c*x0) ** n)
     """
-    x0 = symbols("x0")
+    x0, t = symbols("x0 t")
 
     b = Wild("b", exclude=[x0])
     c = Wild("c", exclude=[x0])
-    d = Wild("d", exclude=[x0])
+    
     n = Wild("n")
     
     a, denom = term.as_numer_denom()
+    
+    den_args = SympyMul.make_args(denom)
+    den_coeffs = 1
+    for den_arg in den_args:
+        if x0 in den_arg.free_symbols:
+            crucial = den_arg
+        else:
+            den_coeffs *= den_arg
 
-    denom_form = b * (c + d*x0) ** n
-    match = denom.match(denom_form)
+    denom_form = (b + c * x0) ** n
+    match = crucial.match(denom_form)
 
     b = match[b]
-    c = match[c]
-    d = -match[d]
+    c = -match[c]
     n = match[n]
     
-    t = symbols("t")
+    coeff1 = a / (b ** n * den_coeffs)
+    coeff2 = c / b
     
-    coeff1 = a / (b * c ** n)
-    coeff2 = d / c
-
     ts = 0
     for i in range(n):
         ts += (comb(n-1, i) / sym.factorial(i)) * (coeff2 * t) ** i
@@ -405,6 +436,7 @@ def is_cosine_form(term):
     """
     Tests whether the term is of cosine form.
     """
+    print("COSINE IS SLOW")
     if is_unit_form(term):
         return False
     
@@ -429,7 +461,8 @@ def lb_cosine(term):
     """
     a * (b + c*x**2) ** -1
     """
-    x0 = symbols("x0")
+    print("COSINE IS SLOW")
+    x0, t = symbols("x0 t")
     a = Wild("a", exclude=[x0, 0])
     b = Wild("b", exclude=[x0, 0])
     c = Wild("c", exclude=[x0, 0])
@@ -444,48 +477,10 @@ def lb_cosine(term):
     c = match[c]
     n = match[n]
     
-    t = symbols("t")
-    
     coeff1 = a / b**n
     coeff2 = sym.sqrt(c / b)
     
     return coeff1 * sym.cos(coeff2 * t)
-    
-
-def lb_sin(term):
-    """
-    Given in Unal's paper in the papers repo.
-    
-    LB(sin(wt)) = iwx0 / (1 + w**2 x0**2)
-    """
-    pass
-
-
-def lb_cos(term):
-    """
-    Given in Unal's paper in the papers repo.
-    
-    LB(cos(wt)) = 1 / (1 + w**2 x0**2)
-    """
-    pass
-
-
-def lb_sinh(term):
-    """
-    Given in Unal's paper in the papers repo.
-    
-    LB(sinh(wt)) = wx0 / (1 - w**2 x0**2)
-    """
-    pass
-
-
-def lb_cosh(term):
-    """
-    Given in Unal's paper in the papers repo.
-    
-    LB(cosh(wt)) = 1 / (1 - w**2 x0**2)
-    """
-    pass
 
 
 def time_function(time_domain):
@@ -497,17 +492,14 @@ def time_function(time_domain):
 
 
 if __name__ == "__main__":
+    x0, x1, a1, a2, k1, k2, k3, A = symbols(
+        "x0 x1 a1 a2 k1 k2 k3 A"
+    )
+    import time
     
-    x0, x1, a, b = symbols("x0 x1 a b")
-    multiplier = GS([
-        [-b, x0],
-        [ a,  0]
-    ])
+    test1 = (36*A**6*a1**7*k2*k3**2 - 450*A**6*a1**6*a2*k2*k3**2 + 504*A**6*a1**5*a2**2*k2*k3**2 + 1998*A**6*a1**4*a2**3*k2*k3**2 - 1728*A**6*a1**3*a2**4*k2*k3**2 - 2196*A**6*a1**2*a2**5*k2*k3**2 + 324*A**6*a1*a2**6*k2*k3**2 + 216*A**6*a2**7*k2*k3**2)/((2*a1 + 2*a2)*(2*x0*(2*a1 + 2*a2) + 2)*(a1**4 - 2*a1**2*a2**2 + a2**4)*(4*a1**12*a2**2 - 28*a1**11*a2**3 + 25*a1**10*a2**4 + 208*a1**9*a2**5 - 430*a1**8*a2**6 - 308*a1**7*a2**7 + 1225*a1**6*a2**8 - 352*a1**5*a2**9 - 680*a1**4*a2**10 + 192*a1**3*a2**11 + 144*a1**2*a2**12))
+    test2 = (36*A**6*a1**8*k2*k3**2 - 558*A**6*a1**7*a2*k2*k3**2 + 270*A**6*a1**6*a2**2*k2*k3**2 + 3654*A**6*a1**5*a2**3*k2*k3**2 - 378*A**6*a1**4*a2**4*k2*k3**2 - 6228*A**6*a1**3*a2**5*k2*k3**2 - 2736*A**6*a1**2*a2**6*k2*k3**2 + 540*A**6*a1*a2**7*k2*k3**2 + 216*A**6*a2**8*k2*k3**2)/((a1 + a2)*(2*a1 + 2*a2)*(2*x0*(2*a1 + 2*a2) + 2)*(-a1**4 - 2*a1**3*a2 + 2*a1*a2**3 + a2**4)*(4*a1**12*a2**2 - 28*a1**11*a2**3 + 25*a1**10*a2**4 + 208*a1**9*a2**5 - 430*a1**8*a2**6 - 308*a1**7*a2**7 + 1225*a1**6*a2**8 - 352*a1**5*a2**9 - 680*a1**4*a2**10 + 192*a1**3*a2**11 + 144*a1**2*a2**12))
     
-    g0 = GS([
-        [ 1, x1],
-        [ a,  0]
-    ])
-    
-    test = impulse_from_iter(g0, multiplier, 2, 2, 1)
-    
+    t0 = time.perf_counter()
+    print(convert_term(test2))
+    print(f"{time.perf_counter() - t0:2f}s")

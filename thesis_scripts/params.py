@@ -6,13 +6,14 @@ Created on Mon Jun 5 11:38:48 2023
 """
 import os
 import sys
-import copy
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.dirname(os.getcwd()) + r"/shuffleproduct")
+import responses as rsps
 import shuffle as shfl
+from sympy.core.add import Add as SympyAdd
 
 
 def plot(y, figax=None, legend_label="y", **kwargs):
@@ -57,6 +58,19 @@ def to_bmatrix(term):
     print("\n".join(rv))
 
 
+def worker(term):
+    """
+    Worker function for the conversion.
+    """
+    if isinstance(term, SympyAdd):
+        ts = []
+        for term1 in term.make_args(term):
+            ts.append(rsps.convert_term(term1))
+        return tuple(ts)
+    else:
+        return rsps.convert_term(term)
+
+
 # System params
 m = 1
 c = 20
@@ -74,7 +88,7 @@ wd = wn * np.sqrt(1 - dr ** 2)
 
 
 # Generating series run params.
-iter_depth = 5  # Gives iter_depth + 1 terms as y_1 is he linear term.
+iter_depth = 5  # Gives iter_depth + 1 terms as y_1 is the linear term.
 
 
 # Time span
@@ -82,6 +96,7 @@ t_span = (0.0, 0.2)
 t_window = (0.0, 0.2)
 dt = 1e-4
 t = np.arange(t_span[0], t_span[1], dt)
+
 
 # Initial conditions
 init_cond = np.array([0.0, 0.0])
@@ -91,3 +106,9 @@ A_min = 0.00
 A_max = 0.15
 A_step = 0.01
 A_range = np.arange(A_min, A_max + A_step, A_step)
+A_log = np.outer(np.logspace(-4, -1, 4), np.arange(1, 10)).flatten()
+
+
+# Plotting Params
+FONTSIZE = 18
+

@@ -246,7 +246,10 @@ class TestExponential(unittest.TestCase):
         results.
         """
         for index, (ans, test_var) in enumerate(zip(exps_t, exps)):
-            assert ans.equals(rsps.lb_exponential(test_var))
+            temp = ans.equals(rsps.lb_exponential(test_var))
+            if not temp:
+                print(index)
+            assert temp
 
 
 class TestCosine(unittest.TestCase):

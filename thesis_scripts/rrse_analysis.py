@@ -8,12 +8,16 @@ import dill
 import numpy as np
 import matplotlib.pyplot as plt
 
-from params import A_range, t, iter_depth
+from params import A_range, t, iter_depth, A_log
 from params import m, c, k1, k2, k3, t_span, init_cond
+from params import FONTSIZE
 from scipy.integrate import solve_ivp
 from rk_quad_cube import duffing_equation
 
 y_rks = []
+
+A_range = A_log
+
 for A in A_range:
     # Solve Duffing's equation
     sol = solve_ivp(
@@ -24,7 +28,7 @@ for A in A_range:
 
 y_rks = np.vstack(y_rks).T
 
-    
+
 def rrse(pred, true):
     """
     Relative root squared error along each column.
@@ -55,18 +59,19 @@ for i, times in enumerate(all_funcs):
         ys_summed.append(times)
     else:
         ys_summed.append(ys_summed[-1] + times)
-        # assert (ys_summed[-1] == (ys_summed[-2] + times)).all()
     rrses.append(rrse(y_rks, ys_summed[-1]))
 
 
 fig_error = plt.figure()
 ax_error = fig_error.gca()
 for i, root_rel_err in enumerate(rrses, 1):
-    ax_error.plot(A_range, root_rel_err, label=f"up to $y^g_{i}$")
+    ax_error.loglog(A_range, root_rel_err, label=f"up to $y^g_{i}$")
 ax_error.legend()
 ax_error.set_title(
-    "Relative Root Squared Error with Runge Kutta"
+    "Relative Root Squared Error with Runge Kutta", fontsize=FONTSIZE
 )
+ax_error.set_xlabel("Impulse Amplitude", fontsize=FONTSIZE)
+ax_error.set_ylabel("Error", fontsize=FONTSIZE)
 
 
 # =============================================================================
