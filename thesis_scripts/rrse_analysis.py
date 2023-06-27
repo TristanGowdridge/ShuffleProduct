@@ -65,7 +65,7 @@ for i, times in enumerate(all_funcs):
 fig_error = plt.figure()
 ax_error = fig_error.gca()
 for i, root_rel_err in enumerate(rrses, 1):
-    ax_error.loglog(A_range, root_rel_err, label=f"up to $y^g_{i}$")
+    ax_error.semilogx(A_range, root_rel_err, label=f"up to $y^g_{i}$")
 ax_error.legend()
 ax_error.set_title(
     "Relative Root Squared Error with Runge Kutta", fontsize=FONTSIZE
@@ -77,7 +77,7 @@ ax_error.set_ylabel("Error", fontsize=FONTSIZE)
 # =============================================================================
 # Time domain plots
 # =============================================================================
-amp_index = 7
+amp_index = 48
 fig, axs = plt.subplots(1, 2, figsize=(14, 5))
 
 axs[0].plot(t, y_rks[:, amp_index], label="$y_{rk}$", c="k")

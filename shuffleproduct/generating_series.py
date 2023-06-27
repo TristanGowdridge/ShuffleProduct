@@ -13,7 +13,7 @@ import abc
 import copy
 from collections import deque, defaultdict
 import numpy as np
-from sympy import symbols
+from sympy import symbols, Matrix
 
 
 class GeneratingSeries:
@@ -403,8 +403,13 @@ class GeneratingSeriesSym(GS_Base):
         return count
     
     def __repr__(self):
+        """
+        Makes use of sympy's printing should be implemented.
+        """
+        # return Matrix(self)
         return self.__str__()
-        
+    
+
     def __hash__(self):
         """
         Hash of all the terms except for the coefficient.
@@ -583,8 +588,8 @@ class GeneratingSeriesSym(GS_Base):
         return collected_terms
     
     def to_array(self):
-        return np.array([self.coeff, *self.words],[*self.dens, 0])
-        
+        return np.array([self.coeff, *self.words], [*self.dens, 0])
+     
 
 if __name__ == "__main__":
     import sympy as sym

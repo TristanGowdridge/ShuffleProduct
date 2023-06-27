@@ -106,7 +106,7 @@ A_min = 0.00
 A_max = 0.15
 A_step = 0.01
 A_range = np.arange(A_min, A_max + A_step, A_step)
-A_log = np.outer(np.logspace(-4, -1, 4), np.arange(1, 10)).flatten()
+A_log = np.outer(np.logspace(-4, -1, 4), np.arange(1, 10, 0.5)).flatten()
 
 
 # Plotting Params

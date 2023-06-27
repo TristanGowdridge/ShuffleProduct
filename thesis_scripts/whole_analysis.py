@@ -215,22 +215,25 @@ def convert_gs_to_time(terms, amp, iter_depth):
     g = impulsehere(terms, amp, iter_depth)
     
     gs_pf = matlab_partfrac_here(
-        g, filename="Testing21st_", delete_files=False
+        g, filename="dele", delete_files=True
     )
     
-    for key, pf in gs_pf.items():
-        # Pickle the SymPy versions.
-        with open(f"quad_cube_y{key+1}_partfrac_symbolic.txt", "wb") as f_sym:
-            pkl.dump(tuple(pf), f_sym)
+    # for key, pf in gs_pf.items():
+    #     # Pickle the SymPy versions.
+    #     with open(f"quad_cube_y{key+1}_partfrac_symbolic.txt", "wb") as f_sym:
+    #         pkl.dump(tuple(pf), f_sym)
         
-        list_serial = parallel_inverse_lb_and_save(pf)
+    #     list_serial = parallel_inverse_lb_and_save(pf)
 
-        with open(f"quad_cube_y{key+1}_volt_sym.txt", "wb") as f_sym:
-            pkl.dump(list_serial, f_sym)
+    #     with open(f"quad_cube_y{key+1}_volt_sym.txt", "wb") as f_sym:
+    #         pkl.dump(list_serial, f_sym)
+    
+    return gs_pf
 
 
 if __name__ == "__main__":
     t0 = time.perf_counter()
+    iter_depth=2
     # =============================================================================
     # Symbolic
     # =============================================================================
@@ -270,12 +273,12 @@ if __name__ == "__main__":
         _k3: k3,
     }
     
-    for i in range(iter_depth+1):
-        with open(f"quad_cube_y{i+1}_gen_sym.txt", "wb") as f_sym:
-            pkl.dump(y_gs[i], f_sym)
-        print(i)
-        temp = lambdify(symbols('t'), y_gs[i].subs(vals))(t)
-        np.save(f"quad_cube_y{i+1}_gen_num.npy", temp)
+    # for i in range(iter_depth+1):
+    #     with open(f"quad_cube_y{i+1}_gen_sym.txt", "wb") as f_sym:
+    #         pkl.dump(y_gs[i], f_sym)
+    #     print(i)
+    #     temp = lambdify(symbols('t'), y_gs[i].subs(vals))(t)
+    #     np.save(f"quad_cube_y{i+1}_gen_num.npy", temp)
     
     # y1_g = lambdify(symbols('t'), y_gs[0].subs(vals))(t)
     # y2_g = lambdify(symbols('t'), y_gs[1].subs(vals))(t)  # iter_depth = 1
