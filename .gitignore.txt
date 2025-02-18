@@ -9,3 +9,4 @@ tests/.coverage
 build/
 tests/report/
 profile_logs/
+*.pyc
