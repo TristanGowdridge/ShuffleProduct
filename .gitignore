@@ -12,3 +12,5 @@ profile_logs/
 *.pyc
 env/
 thesis_scripts/
+profile_logs/
+Papers/
