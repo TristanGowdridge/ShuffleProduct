@@ -3,13 +3,6 @@
 Created on Thu May 11 17:10:37 2023
 
 @author: trist
-
-
-To Do:
-    * Collect 001, 010, 100 -> 3 * 001. Caching and sorting probably do this
-    anyway?
-    
-    * for impulse dont consider terms in the shuffle above the iteration depth.
 """
 from collections import defaultdict
 from itertools import permutations, product
@@ -158,68 +151,6 @@ def partitions(iter_depth: int, number_of_shuffles: int) -> Tuple[int]:
     return parts
 
 
-# @shuffle_cacher
-def shuffle(*args):
-    """
-    Make use of numpy as grid
-    Vectorise functions with ufunc?
-    """
-    grid = defaultdict(list)
-    n_gs = len(args)
-    ends, gss, gs_lens = [], [], []
-    for gs in args:
-        _end, _gs, _gs_len = args[0].get_end(gs)
-        ends.append(_end)
-        gss.append(_gs)
-        gs_lens.append(_gs_len)
-    gs_lens = np.array(gs_lens)
-    
-    # Create essentially a nested for loop over all combinations of the
-    # generating series indices.
-    for index in product(*[range(gs_len+1) for gs_len in gs_lens]):
-        index = np.array(index)
-        are_reducible = (index < gs_lens)
-        
-        loop_terms = []
-        for i, is_reducible, gs, end in zip(index, are_reducible, gss, ends):
-            if is_reducible:
-                loop_terms.append(gs.get_term(i))
-            else:
-                loop_terms.append(end)
-        
-        gs_reducts = []
-        for i, (gs, is_reducible) in enumerate(zip(loop_terms, are_reducible)):
-            if is_reducible:
-                gs_reducts.append(gs.reduction_term(
-                    gs, *loop_terms[:i], *loop_terms[(i+1):])
-                )
-            else:
-                gs_reducts.append(None)
-            
-            current = grid[tuple(index)]
-            next_indices = sorted(partitions(1, n_gs), reverse=True)
-            if not current:
-                for next_index, gs_reduct in zip(next_indices, gs_reducts):
-                    # Special case for first loop pass.
-                    grid[next_index].append(args[0].first_term(gs_reduct))
-                continue
-            
-            for count, curr in args[0].collect_grid(current):
-                for next_index, gs_reduct, is_reducible in zip(next_indices, gs_reducts, are_reducible):
-                    next_index = np.array(next_index)
-                    if is_reducible:
-                        next_index = index + next_index
-                        args[0].add_to_stack(
-                            grid[tuple(next_index)], count, gs_reduct, curr
-                        )
-                        
-            to_return = args[0].handle_end(grid)
-
-    # to_return = gs1.handle_end(grid, gs1_len, gs2_len, end1, end2, gs1, gs2)
-        
-    # return tuple(to_return)
-
-
 @shuffle_cacher
 def nShuffles(
         *args: Union[GS, List[GS]]
@@ -327,28 +258,4 @@ def sdof_roots(m, c, k):
     if det == 0:
         roots = np.real(roots)
 
-    return -roots
-
-
-if __name__ == "__main__":
-    x0 = 0
-    x1 = 1
-    
-    a = 2
-    b = 3
-
-    multiplier = np.array([
-        [-b, x0],
-        [ a,  0]
-    ])
-    
-    g0 = GS([
-        [ 1, x1],
-        [ a,  0]
-    ])
-    shuffle_out = shuffle(g0, g0, g0)
-    # from time import perf_counter
-    # iter_args = (g0, multiplier, 2)
-    # t0 = perf_counter()
-    # scheme = iterate_gs(*iter_args, iter_depth=7)
-    # print(perf_counter()-t0)
+    return roots

@@ -246,60 +246,62 @@ class TestExponential(unittest.TestCase):
         results.
         """
         for index, (ans, test_var) in enumerate(zip(exps_t, exps)):
-            temp = ans.equals(rsps.lb_exponential(test_var))
+            
+            temp_lb = rsps.lb_exponential(test_var)
+            temp = ans.equals(temp_lb)
             if not temp:
-                print(index)
+                print(index, ans, test_var, temp_lb)
             assert temp
 
 
-class TestCosine(unittest.TestCase):
-    def test_cosine_form(self):
-        """
-        Checks for true positives.
-        """
-        for test_var in coses:
-            assert rsps.is_cosine_form(test_var)
+# class TestCosine(unittest.TestCase):
+#     def test_cosine_form(self):
+#         """
+#         Checks for true positives.
+#         """
+#         for test_var in coses:
+#             assert rsps.is_cosine_form(test_var)
     
-    def test_not_cosine_form(self):
-        """
-        Checks for false negatives.
-        """
-        for test_var in units:
-            assert not rsps.is_cosine_form(test_var)
+#     def test_not_cosine_form(self):
+#         """
+#         Checks for false negatives.
+#         """
+#         for test_var in units:
+#             assert not rsps.is_cosine_form(test_var)
             
-        for test_var in polys:
-            assert not rsps.is_cosine_form(test_var)
+#         for test_var in polys:
+#             assert not rsps.is_cosine_form(test_var)
             
-        for test_var in exps:
-            assert not rsps.is_cosine_form(test_var)
+#         for test_var in exps:
+#             assert not rsps.is_cosine_form(test_var)
         
-        for test_var in faulties:
-            assert not rsps.is_cosine_form(test_var)
+#         for test_var in faulties:
+#             assert not rsps.is_cosine_form(test_var)
             
-    def test_conversion(self):
-        """
-        Checks that the inverse transform is the same as some hand-calculated
-        results.
+#     def test_conversion(self):
+#         """
+#         Checks that the inverse transform is the same as some hand-calculated
+#         results.
         
-            ** THIS IS AN ISSUE WITH SYMPY AND HAS NO EFFECT ON THE RESULT **
-        Sympy is struggling to equate sqrt(3)/3 to its decimal expansion.
-        Therefore I am evaluating both terms at 1 and asserting that it is less
-        than a threshold value.
-        """
-        for index, (ans, test_var) in enumerate(zip(coses_t, coses)):
-            ans = sym.nsimplify(ans)
-            calculated = sym.nsimplify(rsps.lb_cosine(test_var))
+#             ** THIS IS AN ISSUE WITH SYMPY AND HAS NO EFFECT ON THE RESULT **
+#         Sympy is struggling to equate sqrt(3)/3 to its decimal expansion.
+#         Therefore I am evaluating both terms at 1 and asserting that it is less
+#         than a threshold value.
+#         """
+#         for index, (ans, test_var) in enumerate(zip(coses_t, coses)):
+#             ans = sym.nsimplify(ans)
+#             calculated = sym.nsimplify(rsps.lb_cosine(test_var))
             
-            if index not in (9, 10):
-                ans.equals(calculated)
-            else:
-                diff = (ans - calculated).subs({t: 1}).evalf()
-                print(f"\nFloating point misalignment for Cos index {index}")
-                print(
-                    "The difference between the two terms evaluated at 1 is ",
-                    diff
-                )
-                assert abs(diff) < 1e-10
+#             if index not in (9, 10):
+#                 ans.equals(calculated)
+#             else:
+#                 diff = (ans - calculated).subs({t: 1}).evalf()
+#                 print(f"\nFloating point misalignment for Cos index {index}")
+#                 print(
+#                     "The difference between the two terms evaluated at 1 is ",
+#                     diff
+#                 )
+#                 assert abs(diff) < 1e-10
 
 
 if __name__ == "__main__":

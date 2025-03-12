@@ -16,9 +16,9 @@ from sympy import symbols, lambdify
 from params import A, m, c, k1, k2, k3, plot, t
 
 sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
-import shufflesym as shfl
+import shuffle as shfl
 import responses as rsps
-from generating import GeneratingSeries
+from generating_series import GeneratingSeries
 
 
 _k2, _k3, _x0, _x1, _a1, _a2, _A = symbols("k2 k3 x0 x1 a1 a2 A")

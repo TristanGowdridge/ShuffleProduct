@@ -4,6 +4,10 @@ Created on Mon Jun  5 13:16:01 2023
 
 @author: trist
 """
+
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
 from collections import defaultdict
 from operator import itemgetter
 from itertools import product
@@ -36,6 +40,7 @@ mult_cube = np.array([
     [-k3, x0, x0],
     [ a1, a2,  0]
 ])
+
 
 
 def iterate_quad_cubic(iter_depth):

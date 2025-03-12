@@ -15,7 +15,6 @@ import responses as rsps
 import shuffle as shfl
 from sympy.core.add import Add as SympyAdd
 
-
 def plot(y, figax=None, legend_label="y", **kwargs):
     # Plot the results
     if not figax:
@@ -88,11 +87,11 @@ wd = wn * np.sqrt(1 - dr ** 2)
 
 
 # Generating series run params.
-iter_depth = 5  # Gives iter_depth + 1 terms as y_1 is the linear term.
+iter_depth = 2  # Gives iter_depth + 1 terms as y_1 is the linear term.
 
 
 # Time span
-t_span = (0.0, 0.2)
+t_span = (0.0, 1.0)
 t_window = (0.0, 0.2)
 dt = 1e-4
 t = np.arange(t_span[0], t_span[1], dt)
@@ -106,9 +105,8 @@ A_min = 0.00
 A_max = 0.15
 A_step = 0.01
 A_range = np.arange(A_min, A_max + A_step, A_step)
-A_log = np.outer(np.logspace(-4, -1, 4), np.arange(1, 10, 0.5)).flatten()
+A_log = np.logspace(-4, 0, 200)
 
 
 # Plotting Params
 FONTSIZE = 18
-

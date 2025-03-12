@@ -5,6 +5,7 @@ Created on Mon Jun 12 08:29:35 2023
 @author: trist
 """
 import dill
+import pickle as pkl
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -60,48 +61,18 @@ for i, times in enumerate(all_funcs):
     else:
         ys_summed.append(ys_summed[-1] + times)
     rrses.append(rrse(y_rks, ys_summed[-1]))
-
-
-fig_error = plt.figure()
-ax_error = fig_error.gca()
-for i, root_rel_err in enumerate(rrses, 1):
-    ax_error.semilogx(A_range, root_rel_err, label=f"up to $y^g_{i}$")
-ax_error.legend()
-ax_error.set_title(
-    "Relative Root Squared Error with Runge Kutta", fontsize=FONTSIZE
-)
-ax_error.set_xlabel("Impulse Amplitude", fontsize=FONTSIZE)
-ax_error.set_ylabel("Error", fontsize=FONTSIZE)
-
-
-# =============================================================================
-# Time domain plots
-# =============================================================================
-amp_index = 48
-fig, axs = plt.subplots(1, 2, figsize=(14, 5))
-
-axs[0].plot(t, y_rks[:, amp_index], label="$y_{rk}$", c="k")
-axs[1].plot(t, y_rks[:, amp_index], label="$y_{rk}$", c="k")
-
-for i, (y_s, y_i) in enumerate(zip(ys_summed, all_funcs), 1):
-    axs[0].plot(
-        t, y_s[:, amp_index], label=f"up to $y_{i}^g$", linestyle="--",
-        alpha=0.7
-    )
-    axs[1].plot(
-        t, y_i[:, amp_index], label=f"$y_{i}^g$", linestyle="--", alpha=0.7
-    )
-for i in range(len(axs)):
-    axs[i].legend(loc=1, prop={"size": 10})
-    axs[i].set_xlabel("t")
-    axs[i].set_ylabel("Amplitude")
     
-axs[0].set_title(
-    f"Volterra series at impulse ampliude {A_range[amp_index]:.2f}"
-)
-axs[1].set_title(
-    f"Individual Volterra terms at impulse amplitude {A_range[amp_index]:.2f}"
-)
 
+# =============================================================================
+# Saving Data
+# =============================================================================
+with (
+        open("all_volterra_terms.pkl", "wb") as f_write1,
+        open("all_rrses.pkl", "wb") as f_write2,
+        open("all_volterra_series.pkl", "wb") as f_write3
+):
+    pkl.dump(all_funcs, f_write1)
+    pkl.dump(rrses, f_write2)
+    pkl.dump(ys_summed, f_write3)
 
-        
+y_rks = np.save("Runge_kuttas.npy", y_rks)
