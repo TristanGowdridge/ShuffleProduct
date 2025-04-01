@@ -7,19 +7,15 @@ Created on Fri May 12 12:56:04 2023
 
 from setuptools import setup
 
-
-# The text of the README file
-with open('README.md') as f:
-    rm = f.read()
-
 # This call to setup() does all the work
 setup(
     name                            = "shuffleproduct",
     version                         = "0.0.1",
+    test_suite                      = "tests",
     description                     = "shuffleproduct of Generating Series",
-    long_description                = rm,
+    long_description                = open("README.md").read(),
     long_description_content_type   = "text/markdown",
-    url                             = "https://github.com/TristanGowdridge",
+    url                             = "https://github.com/TristanGowdridg/ShuffleProduct",
     author                          = "Tristan Gowdridge",
     author_email                    = "tristan.gowdridge@gmail.com",
     license                         = "MIT",
@@ -29,7 +25,6 @@ setup(
         "Intended Audience :: Science/Research",
     ],
     packages                        = ['shuffleproduct'],
-    package_dir                     = {'':'ShuffleProduct'},
     include_package_data            = False,
     install_requires                = [
         "numpy",
