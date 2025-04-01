@@ -19,8 +19,8 @@ from sympy.core.add import Add as SympyAdd
 from sympy.core.mul import Mul as SympyMul
 from sympy.functions.elementary.exponential import exp as sympyexp
 
-import shuffleproduct.shuffle as shfl
-from shuffleproduct.generating_series import GeneratingSeries as GS
+from . import shuffle as shfl
+from .generating_series import GeneratingSeries as GS
 
 
 def to_fraction(terms):

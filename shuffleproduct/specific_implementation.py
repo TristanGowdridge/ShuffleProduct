@@ -8,13 +8,10 @@ import numpy as np
 from sympy import symbols, factorial, apart
 from sympy.core.add import Add as SympyAdd
 
-from examples.params import A, m, c, k1, k2, k3, t, iter_depth
-from auxilliary_funcs import worker
 
-
-import shuffleproduct.shuffle as shfl
-from shuffleproduct.generating_series import GeneratingSeries as GS
-
+from . import shuffle as shfl
+from .generating_series import GeneratingSeries as GS
+from .responses import convert_term
 
 
 
@@ -153,15 +150,45 @@ def impulsehere(terms, amp, iter_depth):
                 raise ValueError("Unknown term in 0th row.")
 
     return {key: imp[key+1] for key in range(iter_depth+1)}
-   
+
+
+def worker(term):
+    """
+    Worker function for the conversion.
+    """
+    if isinstance(term, SympyAdd):
+        ts = []
+        for term1 in term.make_args(term):
+            ts.append(convert_term(term1))
+        return tuple(ts)
+    else:
+        return (convert_term(term),)
+
 
 def parallel_inverse_lb_and_save(pf):
-    # In parallel compute the inverse Laplace-Borel transform
+    """
+    In parallel compute the inverse Laplace-Borel transform.
+    The multiprocessing logic will now be inside a main block.
+    """
+    # Ensure the following code only runs when the script is executed directly.
     result = []
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
-        for r in executor.map(worker, pf):
+    if False:
+        
+        with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+            # Pass the worker function to the executor map
+            for r in executor.map(worker, pf):
+                result.extend(r)
+        return tuple(result)
+    else:
+        result = []
+    
+        # Serial loop through pf and apply the worker function
+        for term in pf:
+            r = worker(term)
             result.extend(r)
-    return tuple(result)
+        
+        return tuple(result)
+        
 
 
 def convert_gs_to_time(terms, amp, iter_depth):
@@ -195,12 +222,14 @@ def partial_parallel(term, x):
     separated = SympyAdd.make_args(pf_terms)    # Make individual fraction terms
     return [i.simplify() for i in separated]  # Return simplified fractions
 
+
 # Helper function to be used in ProcessPoolExecutor
 def partial_parallel_wrapper(term, x):
     """
     Wrapper for partial_parallel function to make it pickleable in multiprocessing.
     """
     return partial_parallel(term, x)
+
 
 def sympy_partfrac_here(g):
     """
@@ -213,7 +242,8 @@ def sympy_partfrac_here(g):
     for index, gs in g.items():
         individual_storage = []
 
-        if len(gs) < cpu_cnt:  # If the number of terms is less than CPU count, process sequentially
+        # if len(gs) < cpu_cnt:  # If the number of terms is less than CPU count, process sequentially
+        if True:  # If the number of terms is less than CPU count, process sequentially
             for term in gs:
                 individual_storage.extend(partial_parallel(term, x))
         else:

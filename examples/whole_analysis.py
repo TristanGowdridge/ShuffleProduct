@@ -18,11 +18,10 @@ import shuffleproduct.shuffle as shfl
 from shuffleproduct.generating_series import GeneratingSeries as GS
 from shuffleproduct.specific_implementation import iterate_quad_cubic, convert_gs_to_time
 
-
 import pickle as pkl
 
 t0 = time.perf_counter()
-iter_depth=2
+iter_depth = 2
 # =============================================================================
 # Symbolic
 # =============================================================================
