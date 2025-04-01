@@ -7,7 +7,7 @@ Created on Wed Mar 12 09:35:25 2025
 import matplotlib.pyplot as plt
 import responses as rsps
 from sympy.core.add import Add as SympyAdd
-from params import t_window, t
+from examples.params import t_window, t
 
 
 def plot(y, figax=None, legend_label="y", **kwargs):

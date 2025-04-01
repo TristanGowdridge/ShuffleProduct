@@ -13,7 +13,7 @@ import copy
 
 import numpy as np
 
-from generating_series import GeneratingSeries as GS
+from shuffleproduct.generating_series import GeneratingSeries as GS
 
 
 def shuffle_cacher(func):
