@@ -16,7 +16,7 @@ from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 from sympy import symbols, lambdify, factorial, apart
 
-from params import A, m, c, k1, k2, k3, t, iter_depth
+from examples.params import A, m, c, k1, k2, k3, t, iter_depth
 from auxilliary_funcs import worker, plot
 from vci_quad_cube import y1 as y1_volt
 from vci_quad_cube import y2 as y2_volt
@@ -240,8 +240,10 @@ def sympy_partfrac_here(g):
 
 
 if __name__ == "__main__":
+    import pickle as pkl
+    
     t0 = time.perf_counter()
-    iter_depth=4
+    iter_depth=2
     # =============================================================================
     # Symbolic
     # =============================================================================
@@ -283,18 +285,21 @@ if __name__ == "__main__":
     }
     
     # for i in range(iter_depth+1):
-        # with open(f"quad_cube_y{i+1}_gen_sym.txt", "wb") as f_sym:
-        #     pkl.dump(y_gs[i], f_sym)
-        # print(i)
-        # temp = lambdify(symbols('t'), y_gs[i].subs(vals))(t)
-        # np.save(f"quad_cube_y{i+1}_gen_num.npy", temp)
+    #     with open(f"quad_cube_y{i+1}_gen_sym.txt", "wb") as f_sym:
+    #         pkl.dump(y_gs[i], f_sym)
+    #     print(i)
+    #     temp = lambdify(symbols('t'), sum(y_gs[i]).subs(vals))(t)
+    #     np.save(f"quad_cube_y{i+1}_gen_num.npy", temp)
     
     y1_g = lambdify(symbols('t'), sum(y_gs[0]).subs(vals))(t)
     y2_g = lambdify(symbols('t'), sum(y_gs[1]).subs(vals))(t)  # iter_depth = 1
     y3_g = lambdify(symbols('t'), sum(y_gs[2]).subs(vals))(t)  # iter_depth = 2
-    y4_g = lambdify(symbols('t'), sum(y_gs[3]).subs(vals))(t)  # iter_depth = 3
+    # y4_g = lambdify(symbols('t'), sum(y_gs[3]).subs(vals))(t)  # iter_depth = 3
     # y5_g = lambdify(symbols('t'), y_gs[4].subs(vals))(t)  # iter_depth = 4
     # y6_g = lambdify(symbols('t'), y_gs[5].subs(vals))(t)  # iter_depth = 5
+
+    # np.save(f"quad_cube_y3_k3_only_gen_num.npy", y3_g)
+    
     
     # for i in y_gs.values():
     #     print(i)
@@ -310,7 +315,7 @@ if __name__ == "__main__":
     _figax = plot(y1_g, _figax, "$y^g_1$", linestyle="--")
     _figax = plot(y2_g, _figax, "$y^g_2$", linestyle="--")
     _figax = plot(y3_g, _figax, "$y^g_3$", linestyle="--")
-    _figax = plot(y4_g, _figax, "$y^g_4$", linestyle="--")
+    # _figax = plot(y4_g, _figax, "$y^g_4$", linestyle="--")
     # _figax = plot(y5_g, _figax, "$y^g_5$", linestyle="--")
     
     # _figax = plot(y1_g + y2_g + y3_g, _figax, "$y gen 3$", linestyle="--")

@@ -6,7 +6,7 @@ Created on Thu Jun  8 08:17:44 2023
 """
 
 from numpy import exp, cos, sin, angle, abs
-from params import m, k3, dr, wn, wd, A, t
+from examples.params import m, k3, dr, wn, wd, A, t
 from auxilliary_funcs import plot
 
 
