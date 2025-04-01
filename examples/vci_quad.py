@@ -5,8 +5,8 @@ Created on Thu Jun  8 08:12:25 2023
 @author: trist
 """
 from numpy import exp, cos, sin, angle, abs
-from examples.params import m, k2, dr, wn, wd, A, t
-from auxilliary_funcs import plot
+from params import m, k2, dr, wn, wd, A, t
+from shuffleproduct.auxilliary_funcs import plot
 
 
 y1 = A / (m * wd) * exp(-dr*wn*t) * sin(wd * t)

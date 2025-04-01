@@ -7,16 +7,12 @@ Created on Fri Apr 28 13:42:27 2023
 This shows the results for the impulse response in the paper An Algebraic
 Approach to Nonliner Functional Expansions - Fleiss.
 """
-import os
-import sys
-sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
-
 import numpy as np
 from sympy import Symbol, lambdify
 import matplotlib.pyplot as plt
 
-import responses as rsps
-import shuffle as shfl
+import shuffleproduct.responses as rsps
+import shuffleproduct.shuffle as shfl
 
 
 # x0 and x1 are the generating series terms used in the expansion. These are

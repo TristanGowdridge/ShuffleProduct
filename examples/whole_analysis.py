@@ -4,26 +4,18 @@ Created on Thu Jun  8 13:12:17 2023
 
 @author: trist
 """
-import os
-from collections import defaultdict
-from operator import itemgetter
-from itertools import product
 import time
-from concurrent.futures import ProcessPoolExecutor
 
-import numpy as np
-from sympy import symbols, lambdify, factorial, apart
-from sympy.core.add import Add as SympyAdd
+from sympy import symbols, lambdify
 
-from examples.params import A, m, c, k1, k2, k3, t, iter_depth
-from shuffleproduct.auxilliary_funcs import worker, plot
+from params import A, m, c, k1, k2, k3, t, iter_depth
+from shuffleproduct.auxilliary_funcs import plot
 from vci_quad_cube import y1 as y1_volt
 from vci_quad_cube import y2 as y2_volt
 from vci_quad_cube import y3 as y3_volt
 
 import shuffleproduct.shuffle as shfl
 from shuffleproduct.generating_series import GeneratingSeries as GS
-
 from shuffleproduct.specific_implementation import iterate_quad_cubic, convert_gs_to_time
 
 

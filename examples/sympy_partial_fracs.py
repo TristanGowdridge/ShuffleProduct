@@ -4,20 +4,13 @@ Created on Fri May 12 11:07:28 2023
 
 @author: trist
 """
-import os
-import sys
-sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
-
-
-import shuffle as shfl
-from generating_series import GeneratingSeries
+import shuffleproduct.shuffle as shfl
+from shuffleproduct.generating_series import GeneratingSeries
+import shuffleproduct.responses as rsps
 
 import numpy as np
 import sympy as sym
 import matplotlib.pyplot as plt
-
-import responses as rsps
-
 
 t = sym.Symbol("t")
 

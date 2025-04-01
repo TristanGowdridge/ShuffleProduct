@@ -19,10 +19,9 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-sys.path.insert(0, os.path.dirname(os.getcwd()) + r"\shuffleproduct")
-import shuffle as shfl
-import responses as rsps
-from generating_series import GeneratingSeries
+import shuffleproduct.shuffle as shfl
+import shuffleproduct.responses as rsps
+from shuffleproduct.generating_series import GeneratingSeries
 
 x0 = 0
 x1 = 1

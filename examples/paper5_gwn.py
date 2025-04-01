@@ -4,17 +4,13 @@ Created on Wed May  3 09:11:31 2023
 
 @author: trist
 """
-import os
-import sys
-sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
-
 import numpy as np
 
 import matplotlib.pyplot as plt
 from sympy import lambdify, Symbol
 
-import responses as rsps
-from shuffle import GeneratingSeries, iterate_gs
+import shuffleproduct.responses as rsps
+from shuffleproduct.shuffle import GeneratingSeries, iterate_gs
 
 a = 3
 b = 7

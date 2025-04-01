@@ -6,9 +6,7 @@ Created on Mon Jun 5 11:38:48 2023
 """
 import numpy as np
 
-
-
-import shuffle as shfl
+import shuffleproduct.shuffle as shfl
 
 
 # System params

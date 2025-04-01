@@ -15,14 +15,10 @@ iterative schemes that contain multiple chained shuffle instances. I.e a scheme
 with both gs_i1 Ш gs_i2 Ш gs_i3 and gs_j1 Ш gs_j2. If you wanted to perform
 this analysis, it would have to be performed manually.
 """
-import os
-import sys
-sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
-
 import numpy as np
 
-from shuffle import binary_shuffle, iterate_gs
-from generating_series import GeneratingSeries
+from shuffleproduct.shuffle import binary_shuffle, iterate_gs
+from shuffleproduct.generating_series import GeneratingSeries
 
 # Variables that will be used throughout this demonstration.
 x0 = 0

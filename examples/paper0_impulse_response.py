@@ -4,16 +4,12 @@ Created on Thu May  4 17:44:13 2023
 
 @author: trist
 """
-import os
-import sys
-
 import numpy as np
 from sympy import Symbol
 import matplotlib.pyplot as plt
 
-sys.path.insert(0, os.path.dirname(os.getcwd()) + "\shuffleproduct")
-import responses as rsps
-import shuffle as shfl
+import shuffleproduct.responses as rsps
+import shuffleproduct.shuffle as shfl
 
 
 x0 = 0

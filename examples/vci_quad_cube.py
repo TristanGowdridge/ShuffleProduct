@@ -6,8 +6,8 @@ Created on Mon Jun 5 10:03:18 2023
 """
 from numpy import exp, cos, sin, angle, abs
 
-from examples.params import m, k2, k3, dr, wn, wd, A, t
-from auxilliary_funcs import plot
+from params import m, k2, k3, dr, wn, wd, A, t
+from shuffleproduct.auxilliary_funcs import plot
 
 
 
