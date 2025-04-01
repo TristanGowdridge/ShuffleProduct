@@ -14,3 +14,4 @@ env/
 thesis_scripts/
 profile_logs/
 Papers/
+*.egg-info
