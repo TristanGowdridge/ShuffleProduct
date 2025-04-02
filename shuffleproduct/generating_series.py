@@ -3,15 +3,10 @@
 Created on Fri May 12 07:57:47 2023
 
 @author: trist
-
-to do:
-    * Split the numpy array into coeff, numerator and coefficients. This will
-    make the data types easier to handle. Something like
-    zip(arr[0, 1:], arr[1, :-1]) would do the trick.
 """
-
 import copy
 from collections import deque, defaultdict
+
 import numpy as np
 from sympy import symbols
       
@@ -20,6 +15,7 @@ class GeneratingSeries:
     __slots__ = ("coeff", "words", "dens")
     
     def __init__(self, *args):
+        print("length of args in gs is", len(args))
         if len(args) == 1:
             """
             Legacy code for array form.
@@ -61,7 +57,6 @@ class GeneratingSeries:
         """
         Hash of all the terms except for the coefficient.
         """
-
         return hash(tuple(self.words)) + hash(tuple(self.dens))
     
     def __eq__(self, other_obj):
@@ -81,15 +76,6 @@ class GeneratingSeries:
             return str(np.array([[self.coeff, *self.words], [*self.dens, 0]]))
         else:
             return f"coeff:{self.coeff}\nwords:{self.words}\ndens:{self.dens}"
- 
-    def get_words(self):
-        return symbols("x0 x1")
-    
-    def get_numer(self):
-        return self.words
-    
-    def get_coeff(self):
-        return self.coeff
     
     def scale_coeff(self, scale):
         self.coeff *= scale
@@ -102,16 +88,7 @@ class GeneratingSeries:
         probably doesn't have to be copy.deepcopy and the casting to float on
         the coeff could be an issue.
         """
-        if isinstance(multiplier, np.ndarray):
-            if multiplier.shape[1] == 1:
-                self.coeff *= multiplier[0, 0]
-            
-            elif multiplier.shape[1] >= 2:
-                self.coeff *= multiplier[0, 0]
-                self.words.extendleft(multiplier[0, 1:])
-                self.dens.extendleft(multiplier[1, :-1])
-        
-        elif isinstance(multiplier, GeneratingSeries):
+        if isinstance(multiplier, GeneratingSeries):
             self.coeff *= multiplier.coeff
             self.words.extendleft(multiplier.words)
             self.dens.extendleft(multiplier.dens)
@@ -163,26 +140,6 @@ class GeneratingSeries:
             to_return.append(term)
             
         return to_return
-            
-    def collect(self, output):
-        """
-        This collects all like-terms loops over the generating series in the
-        output.
-        """
-        coefficient_count = defaultdict(int)
-        term_storage = {}
-        output_collected = []
-        
-        for gs in output:
-            coefficient_count[hash(gs)] += gs.coeff
-            term_storage[hash(gs)] = gs
-
-        for term_hash, coeff in coefficient_count.items():
-            temp = term_storage[term_hash]
-            temp.coeff = coeff
-            output_collected.append(temp)
-
-        return output_collected
     
     def handle_output_type(self, term_storage, return_type):
         """
@@ -213,26 +170,6 @@ class GeneratingSeries:
         
         else:
             raise TypeError("Invalid return type.")
-    
-    def collect_grid(self, terms):
-        """
-        
-        """
-        instance_counter = defaultdict(int)
-        term_storage = dict()
-        
-        for count, term in terms:
-            gs_hash = hash(term)
-            instance_counter[gs_hash] += count
-            if gs_hash not in term_storage:
-                term_storage[gs_hash] = term
-        
-        collected_terms = []
-        for key, term in term_storage.items():
-            temp_term = (instance_counter[key], term)
-            collected_terms.append(temp_term)
-        
-        return collected_terms
     
     def to_array(self):
         return np.array([self.coeff, *self.words], [*self.dens, 0])

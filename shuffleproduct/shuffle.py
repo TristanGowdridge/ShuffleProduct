@@ -12,8 +12,13 @@ import functools
 import copy
 
 import numpy as np
-
-from .generating_series import GeneratingSeries as GS
+from sympy import symbols
+# =============================================================================
+# from .generating_series import GeneratingSeries as GS
+# from .responses import impulse
+# =============================================================================
+from generating_series import GeneratingSeries as GS
+from responses import impulse
 
 
 def shuffle_cacher(func):
@@ -27,7 +32,7 @@ def shuffle_cacher(func):
         key = tuple([hash(gs) for gs in args])
         coeff = 1
         for gs in args:
-            coeff *= gs.get_coeff()
+            coeff *= gs.coeff
         
         if key not in shuffle_cache:  # Store the result if unknown.
             result = func(*args)
@@ -93,7 +98,7 @@ def binary_shuffle(gs1, gs2):
                 grid[(1, 0)].append(gs1.first_term(gs2_reduct))
                 continue
             
-            for count, curr in gs1.collect_grid(current):
+            for count, curr in collect_grid(current):
                 if is_reducible1 and is_reducible2:
                     gs1.add_to_stack(grid[(i2, i1+1)], count, gs1_reduct, curr)
                     gs1.add_to_stack(grid[(i2+1, i1)], count, gs2_reduct, curr)
@@ -103,12 +108,54 @@ def binary_shuffle(gs1, gs2):
 
                 elif not is_reducible1 and is_reducible2:
                     gs1.add_to_stack(grid[(i2+1, i1)], count, gs2_reduct, curr)
-                    grid[(i2+1, i1)] = gs1.collect_grid(grid[(i2+1, i1)])
+                    grid[(i2+1, i1)] = collect_grid(grid[(i2+1, i1)])
     
     to_return = gs1.handle_end(grid, gs1_len, gs2_len, end1, end2, gs1, gs2)
         
     return tuple(to_return)
- 
+
+
+def collect(output):
+    """
+    This collects all like-terms loops over the generating series in the
+    output.
+    """
+    coefficient_count = defaultdict(int)
+    term_storage = {}
+    output_collected = []
+    
+    for gs in output:
+        coefficient_count[hash(gs)] += gs.coeff
+        term_storage[hash(gs)] = gs
+
+    for term_hash, coeff in coefficient_count.items():
+        temp = term_storage[term_hash]
+        temp.coeff = coeff
+        output_collected.append(temp)
+
+    return output_collected
+
+
+def collect_grid(terms):
+    """
+    
+    """
+    instance_counter = defaultdict(int)
+    term_storage = dict()
+    
+    for count, term in terms:
+        gs_hash = hash(term)
+        instance_counter[gs_hash] += count
+        if gs_hash not in term_storage:
+            term_storage[gs_hash] = term
+    
+    collected_terms = []
+    for key, term in term_storage.items():
+        temp_term = (instance_counter[key], term)
+        collected_terms.append(temp_term)
+    
+    return collected_terms
+
     
 def wrap_term(term: Union[List, GS]) -> List:
     """
@@ -142,9 +189,7 @@ def partitions(iter_depth: int, number_of_shuffles: int) -> Tuple[int]:
         parts = product(range(iter_depth), repeat=number_of_shuffles)
         parts = [i for i in parts if sum(i) == iter_depth]
         iter_depth_with_zeros = list(
-            set(
-                permutations([0] * (number_of_shuffles - 1) + [iter_depth])
-            )
+            set(permutations([0] * (number_of_shuffles - 1) + [iter_depth]))
         )
         parts.extend(iter_depth_with_zeros)
     
@@ -168,20 +213,20 @@ def nShuffles(
     for gs1_term in gs1:
         for gs2_term in gs2:
             temp_output = binary_shuffle(gs1_term, gs2_term)
-            temp_output = gs1[0].collect(temp_output)
+            temp_output = collect(temp_output)
             output_gs.extend(temp_output)
-        output_gs = gs1[0].collect(output_gs)
-    output_gs = gs1[0].collect(output_gs)
+        output_gs = collect(output_gs)
+    output_gs = collect(output_gs)
     
     # Iterate over the remaining arguments.
     for gs_i in args[2:]:
         storage = []
         for gs_j in output_gs:
             temp_output = binary_shuffle(gs_i, gs_j)
-            temp_output = gs1[0].collect(temp_output)
+            temp_output = collect(temp_output)
             storage.extend(temp_output)
-        output_gs = gs1[0].collect(storage)
-    output_gs = gs1[0].collect(output_gs)
+        output_gs = collect(storage)
+    output_gs = collect(output_gs)
     
     return output_gs
 
@@ -208,8 +253,6 @@ def iterate_gs(g0, multipliers, n_shuffles, iter_depth=2, return_type=tuple):
     oscillator with a quadratic term, there are two distinct shuffle products
     required, one for the quadratic nonlinearity and one for the cubic.
     """
-    is_npy = isinstance(g0, np.ndarray)
-    
     multipliers = wrap_term(multipliers)
     g0 = wrap_term(g0)
     
@@ -219,29 +262,15 @@ def iterate_gs(g0, multipliers, n_shuffles, iter_depth=2, return_type=tuple):
     for depth in range(iter_depth):
         for part in partitions(depth, n_shuffles):
             iter_gs_worker(part, term_storage, depth)
-        term_storage[depth + 1] = g0[0].collect(term_storage[depth + 1])
+        term_storage[depth + 1] = collect(term_storage[depth + 1])
         
         # After the shuffles for this iteration's depth have been caluclated,
         # prepend the multiplier to each term.
-        next_terms = []
         for gs_term in term_storage[depth + 1]:
             for multiplier in multipliers:
-                var_prepend(
-                    is_npy, gs_term, multiplier, term_storage,
-                    depth, next_terms
-                )
+                gs_term.prepend_multiplier(multiplier)
                     
     return g0[0].handle_output_type(term_storage, return_type)
-
-
-def var_prepend(is_npy, gs_term, multiplier, term_storage, depth, next_terms):
-    if is_npy:
-        print("Adding next_terms on every loop iter")
-        temp = gs_term.prepend_multiplier(multiplier)
-        next_terms.append(temp)
-        term_storage[depth + 1] = next_terms
-    else:
-        gs_term.prepend_multiplier(multiplier)
 
 
 def sdof_roots(m, c, k):
@@ -259,3 +288,49 @@ def sdof_roots(m, c, k):
         roots = np.real(roots)
 
     return roots
+
+
+def impulse_from_iter(g0, multipliers, n_shuffles, iter_depth=2, amplitude=1):
+    """
+    The idea here centers around the fact that most of the term in the impulse
+    response are thrown away. So when iterating the generating series, the
+    terms that will definitely not result in any terms later on can be thrown
+    away early, therefore we no longer have to expand these terms, this results
+    in a efficiency gains when comparing to expanding the generating series
+    and then applying the impulse response.
+    """
+    x0, x1 = symbols("x0 x1")
+    
+    multipliers = wrap_term(multipliers)
+    g0 = wrap_term(g0)
+    
+    term_storage = defaultdict(list)
+    term_storage[0].extend(g0)
+    
+    for depth in range(iter_depth):
+        for part in partitions(depth, n_shuffles):
+            # Cartesian product of all the inputs, instead of nested for-loop.
+            terms = itemgetter(*part)(term_storage)
+            for in_perm in product(*terms):
+                term_storage[depth + 1].extend(nShuffles(*in_perm))
+            term_storage[depth + 1] = g0[0].collect(term_storage[depth + 1])
+        
+        # After the shuffles for this iteration's depth have been caluclated,
+        # prepend the multiplier to each term.
+        next_terms = []
+        for gs_term in term_storage[depth + 1]:
+            been_1 = False
+            for x in symbols("x0 x1"):
+                if x == x1:
+                    been_1 = True
+                elif been_1 and x == x0:
+                    break
+            else:
+                for multiplier in multipliers:
+                    gs_term.prepend_multiplier(multiplier)
+
+        term_storage[depth + 1] = next_terms
+    
+    tuple_form = g0[0].handle_output_type(term_storage, tuple)
+    
+    return impulse(tuple_form, amplitude)

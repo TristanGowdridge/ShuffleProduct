@@ -5,31 +5,32 @@ Created on Wed Mar 12 09:35:25 2025
 @author: trist
 """
 import matplotlib.pyplot as plt
-from . import responses as rsps
+
 from sympy.core.add import Add as SympyAdd
+# =============================================================================
+# from . import responses as rsps
+# =============================================================================
+import responses as rsps
 # from examples.params import t_window, t
 
 
-# def plot(y, figax=None, legend_label="y", **kwargs):
-#     # Plot the results
-#     if not figax:
-#         fig = plt.figure(figsize=(10, 6))
-#         ax = fig.gca()
-#         ax.set_xlim(t_window)
-#         ax.set_xlabel('t')
-#         ax.set_ylabel('y')
-#         ax.grid(True)
-#     else:
-#         fig, ax = figax
+def plot(t, y, figax=None, legend_label="y", **kwargs):
+    # Plot the results
+    if not figax:
+        fig = plt.figure(figsize=(10, 6))
+        ax = fig.gca()
+        ax.set_xlim([0, 0.4])
+        ax.set_xlabel('t')
+        ax.set_ylabel('y')
+        ax.grid(True)
+    else:
+        fig, ax = figax
     
-#     ax.plot(t, y, label=legend_label, **kwargs)
-#     ax.legend()
+    ax.plot(t, y, label=legend_label, **kwargs)
+    ax.legend()
 
-#     return (fig, ax)
+    return (fig, ax)
 
-def plot(*args):
-    print(*args)
-    return args
 
 def to_bmatrix(term):
     """

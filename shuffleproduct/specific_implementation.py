@@ -9,11 +9,14 @@ from sympy import symbols, factorial, apart
 from sympy.core.add import Add as SympyAdd
 
 
-from . import shuffle as shfl
-from .generating_series import GeneratingSeries as GS
-from .responses import convert_term
+# =============================================================================
+# # from . import shuffle as shfl
+# # from .generating_series import GeneratingSeries as GS    # Possibly can remove???
+# # from .responses import convert_term
 
-
+# =============================================================================
+import shuffle as shfl
+from responses import convert_term
 
 
 def remove_nonimp(terms):
@@ -23,15 +26,12 @@ def remove_nonimp(terms):
     if not terms:
         return []
     
-    if not isinstance(terms[0], np.ndarray):
-        x0, x1 = symbols("x0 x1")
-    else:
-        x0, x1, = 0, 1
-    
+    x0, x1 = symbols("x0 x1")
+
     store = []
     for term in terms:
         has_been_x1 = False
-        for val in term.get_numer():
+        for val in term.words:
             if val == x1:
                 has_been_x1 = True
                 continue
@@ -47,7 +47,9 @@ def remove_nonimp(terms):
 
 def check_n_x1s_less_than_iter_depth(terms, iter_depth):
     """
-    
+    This is used as an early elimination tool. If the generating series
+    produced are going to be eliminated anyway, you may as well not calculate
+    the expensive shuffle product.
     """
     count = 0
     for term in terms:
@@ -69,8 +71,6 @@ def iterate_quad_cubic(g0, mults, iter_depth):
     """
     mult_quad, mult_cube = mults
     
-    is_npy = isinstance(g0, np.ndarray)
-    
     term_storage = defaultdict(list)
     term_storage[0].append(g0)
     
@@ -84,7 +84,7 @@ def iterate_quad_cubic(g0, mults, iter_depth):
                 if check_n_x1s_less_than_iter_depth(in_perm, iter_depth):
                     term_storage_quad[depth+1].extend(shfl.nShuffles(*in_perm))
         
-        term_storage_quad[depth+1] = g0.collect(term_storage_quad[depth+1])
+        term_storage_quad[depth+1] = shfl.collect(term_storage_quad[depth+1])
         term_storage_quad[depth+1] = remove_nonimp(term_storage_quad[depth+1])
         
         for part in shfl.partitions(depth, 3):
@@ -92,28 +92,20 @@ def iterate_quad_cubic(g0, mults, iter_depth):
             for in_perm in product(*terms):
                 if check_n_x1s_less_than_iter_depth(in_perm, iter_depth):
                     term_storage_cube[depth+1].extend(shfl.nShuffles(*in_perm))
-        term_storage_cube[depth+1] = g0.collect(term_storage_cube[depth+1])
+        term_storage_cube[depth+1] = shfl.collect(term_storage_cube[depth+1])
         term_storage_cube[depth+1] = remove_nonimp(term_storage_cube[depth+1])
     
         # After the shuffles for this iteration's depth have been caluclated,
         # prepend the multiplier to each term.
-        next_terms = []
         for gs_term in term_storage_quad[depth+1]:
-            shfl.var_prepend(
-                is_npy, gs_term, mult_quad, term_storage_quad,
-                depth, next_terms
-            )
+            gs_term.prepend_multiplier(mult_quad)
         term_storage[depth+1].extend(term_storage_quad[depth+1])
         
-        next_terms = []
         for gs_term in term_storage_cube[depth+1]:
-            shfl.var_prepend(
-                is_npy, gs_term, mult_cube, term_storage_cube,
-                depth, next_terms
-            )
+            gs_term.prepend_multiplier(mult_cube)
         term_storage[depth+1].extend(term_storage_cube[depth+1])
         
-        term_storage[depth+1] = g0.collect(term_storage[depth+1])
+        term_storage[depth+1] = shfl.collect(term_storage[depth+1])
     
     return g0.handle_output_type(term_storage, tuple)
 
@@ -189,7 +181,6 @@ def parallel_inverse_lb_and_save(pf):
         
         return tuple(result)
         
-
 
 def convert_gs_to_time(terms, amp, iter_depth):
     """

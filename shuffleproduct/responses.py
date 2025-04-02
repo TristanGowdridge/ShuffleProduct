@@ -4,9 +4,7 @@ Created on Fri Apr 14 15:57:45 2023
 
 @author: trist
 """
-import os
 from math import factorial, comb, prod
-import subprocess
 from collections import defaultdict
 from itertools import product
 from operator import itemgetter
@@ -19,8 +17,11 @@ from sympy.core.add import Add as SympyAdd
 from sympy.core.mul import Mul as SympyMul
 from sympy.functions.elementary.exponential import exp as sympyexp
 
-from . import shuffle as shfl
-from .generating_series import GeneratingSeries as GS
+# =============================================================================
+# from . import shuffle as shfl
+
+# =============================================================================
+import shuffle as shfl
 
 
 def to_fraction(terms):
@@ -63,9 +64,7 @@ def gwn_response(scheme, sigma=1):
     Calculates the GWN response given an input generating series.
     """
     raise NotImplementedError("This hasnt been generalised to gs type")
-    
     gwn = []
-    
     # This first section of the for-loop is getting the terms of the desired
     # form, as many will be reduced to zero.
     for coeff, term in scheme:
@@ -120,11 +119,8 @@ def impulse(scheme, amplitude=1):
     This is used if the generating series have already been expanded. For
     efficiency use impulse_from_iter().
     """
-    if scheme[0][1].dtype == object:
-        x0, x1 = symbols("x0 x1")
-    else:
-        x0, x1, = 0, 1
-    
+    x0, x1 = symbols("x0 x1")
+
     imp = []
     for coeff, term in scheme:
         x0_storage = []
@@ -148,103 +144,6 @@ def impulse(scheme, amplitude=1):
     return imp
 
 
-def impulse_from_iter(
-        g0, multipliers, n_shuffles, iter_depth=2, amplitude=1):
-    """
-    The idea here centers around the fact that most of the term in the impulse
-    response are thrown away. So when iterating the generating series, the
-    terms that will definitely not result in any terms later on can be thrown
-    away early, therefore we no longer have to expand these terms, this results
-    in a efficiency gains when comparing to expanding the generating series
-    and then applying the impulse response.
-    """
-    x0, x1 = g0.get_words()
-    is_npy = isinstance(g0, np.ndarray)
-    
-    multipliers = shfl.wrap_term(multipliers)
-    g0 = shfl.wrap_term(g0)
-    
-    term_storage = defaultdict(list)
-    term_storage[0].extend(g0)
-    
-    for depth in range(iter_depth):
-        for part in shfl.partitions(depth, n_shuffles):
-            # Cartesian product of all the inputs, instead of nested for-loop.
-            terms = itemgetter(*part)(term_storage)
-            for in_perm in product(*terms):
-                term_storage[depth + 1].extend(shfl.nShuffles(*in_perm))
-            term_storage[depth + 1] = g0[0].collect(term_storage[depth + 1])
-        
-        # After the shuffles for this iteration's depth have been caluclated,
-        # prepend the multiplier to each term.
-        next_terms = []
-        for gs_term in term_storage[depth + 1]:
-            been_1 = False
-            for x in gs_term.get_words():
-                if x == x1:
-                    been_1 = True
-                
-                elif been_1 and x == x0:
-                    break
-            else:
-                for multiplier in multipliers:
-                    if is_npy:
-                        temp = gs_term.prepend_multiplier(multiplier)
-                        next_terms.append(temp)
-                        term_storage[depth + 1] = next_terms
-                    else:
-                        gs_term.prepend_multiplier(multiplier)
-
-        term_storage[depth + 1] = next_terms
-    
-    tuple_form = g0[0].handle_output_type(term_storage, tuple)
-    
-    return impulse(tuple_form, amplitude)
-
-      
-def matlab_partfrac(
-        scheme, filename="terms", precision=0, delete_files=True):
-    """
-                        ****** VERY HACKY ******
-    
-    Writes to the fractional forms into a .txt file to be loaded into matlab
-    because it's partial fractions function actually works. Then does the
-    calculation in MATLAB, writes to another .txt file which is then loaded
-    into Python.
-    
-    Because of how this adds the folder to the path, it needs to be ran inside
-    a sub folder.
-    """
-    with open(f"{filename}_python.txt", 'w') as f:
-        for term in scheme:
-            if precision:
-                term = term.evalf(precision)
-            str_term = str(term).replace("**", '^').replace('I', 'i') + "\n"
-            f.write(str_term)
-    run_str = "matlab -nosplash -nodesktop -wait -r"
-    run_str += " \"addpath('../shuffleproduct/');"
-    run_str += f"partial_fractions('{filename}', {precision}); exit\""
-    subprocess.run(run_str)
-    
-    x0, x1, a1, a2, k1, k2, k3, a, b, b1, b2, A = sym.symbols(
-        "x0 x1 a1 a2 k1 k2 k3 a b b1 b2 A"
-    )
-    
-    sum_of_partials = []
-    with open(f"{filename}_MATLAB.txt") as file:
-        while line := file.readline():
-            sum_of_partials.append(eval(line.rstrip()))
-    
-    if delete_files:
-        os.remove(filename+"_MATLAB.txt")
-        os.remove(filename+"_python.txt")
-    
-    return sum_of_partials
-
-
-# =============================================================================
-# Converting to the time domain.
-# =============================================================================
 def convert_term(term):
     """
     Checks against each of the required forms, if the correct form is
@@ -489,17 +388,3 @@ def time_function(time_domain):
     
     """
     return sym.lambdify(symbols('t'), time_domain)
-
-
-if __name__ == "__main__":
-    x0, x1, a1, a2, k1, k2, k3, A = symbols(
-        "x0 x1 a1 a2 k1 k2 k3 A"
-    )
-    import time
-    
-    test1 = (36*A**6*a1**7*k2*k3**2 - 450*A**6*a1**6*a2*k2*k3**2 + 504*A**6*a1**5*a2**2*k2*k3**2 + 1998*A**6*a1**4*a2**3*k2*k3**2 - 1728*A**6*a1**3*a2**4*k2*k3**2 - 2196*A**6*a1**2*a2**5*k2*k3**2 + 324*A**6*a1*a2**6*k2*k3**2 + 216*A**6*a2**7*k2*k3**2)/((2*a1 + 2*a2)*(2*x0*(2*a1 + 2*a2) + 2)*(a1**4 - 2*a1**2*a2**2 + a2**4)*(4*a1**12*a2**2 - 28*a1**11*a2**3 + 25*a1**10*a2**4 + 208*a1**9*a2**5 - 430*a1**8*a2**6 - 308*a1**7*a2**7 + 1225*a1**6*a2**8 - 352*a1**5*a2**9 - 680*a1**4*a2**10 + 192*a1**3*a2**11 + 144*a1**2*a2**12))
-    test2 = (36*A**6*a1**8*k2*k3**2 - 558*A**6*a1**7*a2*k2*k3**2 + 270*A**6*a1**6*a2**2*k2*k3**2 + 3654*A**6*a1**5*a2**3*k2*k3**2 - 378*A**6*a1**4*a2**4*k2*k3**2 - 6228*A**6*a1**3*a2**5*k2*k3**2 - 2736*A**6*a1**2*a2**6*k2*k3**2 + 540*A**6*a1*a2**7*k2*k3**2 + 216*A**6*a2**8*k2*k3**2)/((a1 + a2)*(2*a1 + 2*a2)*(2*x0*(2*a1 + 2*a2) + 2)*(-a1**4 - 2*a1**3*a2 + 2*a1*a2**3 + a2**4)*(4*a1**12*a2**2 - 28*a1**11*a2**3 + 25*a1**10*a2**4 + 208*a1**9*a2**5 - 430*a1**8*a2**6 - 308*a1**7*a2**7 + 1225*a1**6*a2**8 - 352*a1**5*a2**9 - 680*a1**4*a2**10 + 192*a1**3*a2**11 + 144*a1**2*a2**12))
-    
-    t0 = time.perf_counter()
-    print(convert_term(test2))
-    print(f"{time.perf_counter() - t0:2f}s")

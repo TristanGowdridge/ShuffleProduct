@@ -8,7 +8,7 @@ import time
 
 from sympy import symbols, lambdify
 
-from params import A, m, c, k1, k2, k3, t, iter_depth
+from params import A, m, c, k1, k2, k3, t
 from shuffleproduct.auxilliary_funcs import plot
 from vci_quad_cube import y1 as y1_volt
 from vci_quad_cube import y2 as y2_volt
@@ -18,10 +18,9 @@ import shuffleproduct.shuffle as shfl
 from shuffleproduct.generating_series import GeneratingSeries as GS
 from shuffleproduct.specific_implementation import iterate_quad_cubic, convert_gs_to_time
 
-import pickle as pkl
-
 t0 = time.perf_counter()
 iter_depth = 2
+
 # =============================================================================
 # Symbolic
 # =============================================================================
@@ -81,19 +80,19 @@ y3_g = lambdify(symbols('t'), sum(y_gs[2]).subs(vals))(t)  # iter_depth = 2
 # Plotting
 # =============================================================================
 print(f"time taken for full calculation was {time.perf_counter()-t0:.2f}s.")
-_figax = plot(y1_volt, None, "$y_1^v$")
-_figax = plot(y2_volt, _figax, "$y_2^v$")
-_figax = plot(y3_volt, _figax, "$y_3^v$")
+_figax = plot(t, y1_volt, None, "$y_1^v$")
+_figax = plot(t, y2_volt, _figax, "$y_2^v$")
+_figax = plot(t, y3_volt, _figax, "$y_3^v$")
 
-_figax = plot(y1_g, _figax, "$y^g_1$", linestyle="--")
-_figax = plot(y2_g, _figax, "$y^g_2$", linestyle="--")
-_figax = plot(y3_g, _figax, "$y^g_3$", linestyle="--")
-# _figax = plot(y4_g, _figax, "$y^g_4$", linestyle="--")
-# _figax = plot(y5_g, _figax, "$y^g_5$", linestyle="--")
+_figax = plot(t, y1_g, _figax, "$y^g_1$", linestyle="--")
+_figax = plot(t, y2_g, _figax, "$y^g_2$", linestyle="--")
+_figax = plot(t, y3_g, _figax, "$y^g_3$", linestyle="--")
+# _figax = plot(t, y4_g, _figax, "$y^g_4$", linestyle="--")
+# _figax = plot(t, y5_g, _figax, "$y^g_5$", linestyle="--")
 
-# _figax = plot(y1_g + y2_g + y3_g, _figax, "$y gen 3$", linestyle="--")
-# _figax = plot(y1_g + y2_g + y3_g + y4_g, _figax, "$y gen 4$", linestyle="--")
-# _figax = plot(y1_g + y2_g + y3_g + y4_g + y5_g, _figax, "$y gen 5$", linestyle="--")
+# _figax = plot(t, y1_g + y2_g + y3_g, _figax, "$y gen 3$", linestyle="--")
+# _figax = plot(t, y1_g + y2_g + y3_g + y4_g, _figax, "$y gen 4$", linestyle="--")
+# _figax = plot(t, y1_g + y2_g + y3_g + y4_g + y5_g, _figax, "$y gen 5$", linestyle="--")
 
 # _fig, _ax = _figax
 # _ax.set_title(
