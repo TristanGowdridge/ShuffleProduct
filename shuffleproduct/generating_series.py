@@ -5,7 +5,7 @@ Created on Fri May 12 07:57:47 2023
 @author: trist
 """
 import copy
-from collections import deque, defaultdict
+from collections import deque
 
 import numpy as np
 from sympy import symbols
@@ -50,7 +50,6 @@ class GeneratingSeries:
         """
         Makes use of sympy's printing should be implemented.
         """
-        # return Matrix(self)
         return self.__str__()
 
     def __hash__(self):
@@ -173,13 +172,4 @@ class GeneratingSeries:
     
     def to_array(self):
         return np.array([self.coeff, *self.words], [*self.dens, 0])
-     
 
-if __name__ == "__main__":
-    import sympy as sym
-    ob = sym.symbols("a")
-    num_l = [
-        [0,0,1,0],
-        [0,0,0,0]
-    ]
-    num_gs = GeneratingSeries(num_l)
