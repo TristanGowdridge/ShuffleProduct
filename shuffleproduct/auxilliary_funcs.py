@@ -6,13 +6,6 @@ Created on Wed Mar 12 09:35:25 2025
 """
 import matplotlib.pyplot as plt
 
-from sympy.core.add import Add as SympyAdd
-# =============================================================================
-# from . import responses as rsps
-# =============================================================================
-import responses as rsps
-# from examples.params import t_window, t
-
 
 def plot(t, y, figax=None, legend_label="y", **kwargs):
     # Plot the results

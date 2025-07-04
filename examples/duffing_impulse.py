@@ -1,15 +1,13 @@
-import os
-import sys
 import time
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 import shuffleproduct.shuffle as shfl
 import shuffleproduct.responses as rsps
+from shuffle_product.specific_implementation import iterate_quad_cubic
 from shuffleproduct.generating_series import GeneratingSeries
-import paper_funcs as pf
+# import paper_funcs as pf
 
 x0 = 0
 x1 = 1
@@ -25,13 +23,13 @@ amplitude = 1  # No greater than 10.
 
 a1, a2 = shfl.sdof_roots(m, c, k1)
 
-g0 = shfl.GeneratingSeries([
+g0 = GeneratingSeries([
     [ 1, x0, x1],
     [a1, a2,  0]
 ])
 
 if x_init:
-    g0.append(shfl.GeneratingSeries(np.array([
+    g0.append(GeneratingSeries(np.array([
         [x_init, x0],
         [    a2,  0]
     ])))
@@ -49,9 +47,8 @@ multiplier = [np.array([
     [ a1, a2,  0]
 ])]
 
-imp_response = rsps.impulse_from_iter(
-    g0, multiplier, n_shuffles=3, iter_depth=2, amplitude=amplitude
-)
+
+imp_response = iterate_quad_cubic(g0, multiplier, 2)
 
 t0 = time.perf_counter()
 imp_response_partfrac = rsps.matlab_partfrac(

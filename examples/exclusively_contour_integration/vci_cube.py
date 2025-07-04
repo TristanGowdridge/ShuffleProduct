@@ -39,9 +39,9 @@ K += -1j * dr**3 * wn**5 + 1j * dr**5 * wn**5
 
 if __name__ == "__main__":
     # Plot the results
-    figax = plot(y1, None, "y1")
+    figax = plot(t, y1, None, "y1")
 
-    figax = plot(y1+y3, figax, "y1+y3")
+    figax = plot(t, y1+y3, figax, "y1+y3")
     
     fig, ax = figax
     ax.set_title(

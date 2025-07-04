@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 import shuffleproduct.responses as rsps
 import shuffleproduct.shuffle as shfl
-
+from shuffleproduct.generating_series import GeneratingSeries
 
 # x0 and x1 are the generating series terms used in the expansion. These are
 # required to be integers rather than symbolic, because symbolic objects
@@ -28,16 +28,16 @@ k1 = 7
 k2 = 5
 
 # The term that prepended after each iteration of the shuffle product.
-multiplier = np.array([
+multiplier = GeneratingSeries([
     [-k2, x0],
     [ k1,  0]
 ])
 
 # The initial term in the iterative scheme.
-g0 = shfl.GeneratingSeries(np.array([
+g0 = GeneratingSeries([
     [ 1, x1],
     [k1,  0]
-]))
+])
 
 # Calculate the iterative scheme of to depth 5.
 scheme = shfl.iterate_gs(g0, multiplier, n_shuffles=2, iter_depth=5)
@@ -47,7 +47,7 @@ scheme = rsps.impulse(scheme, amplitude=5)
 
 # Decomposes the generating series terms into partial fractions. This
 # decompostion is required for the inverse Laplace-Borel Transform.
-gs_decomposed = rsps.matlab_partfrac(scheme)
+gs_decomposed = rsps.sympy_partfrac_here(scheme)
 
 # inverse_lb determines the inverse Laplace-Borel transform of the decomposed
 # generating series, meaning they are now in the time domain.

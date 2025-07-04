@@ -6,7 +6,7 @@ Created on Thu Apr 20 13:25:20 2023
 
 This script provides a quick demonstration of the shuffle module. The
 generating series terms will be determined in accordance with "An algebraic
-approach to nonlinear functional expansions"- Michel Fleiss. 
+approach to nonlinear functional expansions"- Michel Fleiss.
 
 The first generating series term (g1) will be determined manually to showcase
 the procedure. This is the most flexible method given the current state of the
@@ -30,10 +30,10 @@ b = 3
 # Convert a numpy array into a GeneratingSeries instance. The GeneratingSeries
 # class provides some useful functionality when determining the shuffle
 # product.
-g0 = GeneratingSeries(np.array([
+g0 = GeneratingSeries([
     [ 1, x1],
     [ a,  0]
-]))
+])
 
 
 # =============================================================================
@@ -51,7 +51,7 @@ print("g1 without multiplier\n", *g1)
 # Since BinaryShuffle only calculates the shuffle product between the two 
 # generating series, we need to prepend the "multiplier". Note that multiplier
 # is a numpy array and not an instance of GeneratingSeries.
-multiplier = np.array([
+multiplier = GeneratingSeries([
     [-b, x0],
     [ a,  0]
 ])

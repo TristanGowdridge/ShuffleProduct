@@ -13,12 +13,9 @@ import copy
 
 import numpy as np
 from sympy import symbols
-# =============================================================================
-# from .generating_series import GeneratingSeries as GS
-# from .responses import impulse
-# =============================================================================
-from generating_series import GeneratingSeries as GS
-from responses import impulse
+
+from .generating_series import GeneratingSeries as GS
+from .responses import impulse
 
 
 def shuffle_cacher(func):
@@ -313,7 +310,7 @@ def impulse_from_iter(g0, multipliers, n_shuffles, iter_depth=2, amplitude=1):
             terms = itemgetter(*part)(term_storage)
             for in_perm in product(*terms):
                 term_storage[depth + 1].extend(nShuffles(*in_perm))
-            term_storage[depth + 1] = g0[0].collect(term_storage[depth + 1])
+            term_storage[depth + 1] = collect(term_storage[depth + 1])
         
         # After the shuffles for this iteration's depth have been caluclated,
         # prepend the multiplier to each term.

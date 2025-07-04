@@ -46,8 +46,6 @@ sol = solve_ivp(
 displacement = sol.y[0]
 
 
-
-
 gs_responses = []
 for i in range(1, 4):
     gs_responses.append(np.load(f"quad_cube_y{i}_gen_num.npy"))

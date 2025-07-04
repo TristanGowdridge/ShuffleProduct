@@ -15,10 +15,9 @@ class GeneratingSeries:
     __slots__ = ("coeff", "words", "dens")
     
     def __init__(self, *args):
-        print("length of args in gs is", len(args))
         if len(args) == 1:
             """
-            Legacy code for array form.
+            When passing in generating series in array form.
             """
             self.coeff = np.real(args[0][0][0])
             self.words = deque(np.real(args[0][0][1:]))
